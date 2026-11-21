@@ -1,0 +1,258 @@
+{
+ "inputs": {
+  "references/index/src/ff300_catalog.jsonl": "5fe79d1957ae7cbe156c53b77a7ba59d9d700bbc86d287e527230713c2125a47",
+  "references/index/src/ff300_curated.jsonl": "a0823b5d2b9dbe7f6e7baf22a89fccb32d635bd9de5efb5ee04cf003c4364b62",
+  "references/index/src/method_evidence.jsonl": "4cdc03c90278a909b7ebf71a7c5b7987ac219821f28ac87f43e4e1b9ec2581d2",
+  "references/index/src/models_catalog.jsonl": "84a934a2d98081513bd9686bc9b83d132a8179ffd6f2fd5ff45e45c12673cee3",
+  "references/original/bible/src/MartiniCGSmilesDB_v6.xlsx": "29ea3b592a6410e3ead126d7ad8783b14c060c335e10fa6beca4907fdd3bf184"
+ },
+ "files": {
+  "models": {
+   "records": 177,
+   "beads": 677,
+   "beads_with_signature": 675,
+   "by_mapping_support": {
+    "atom_membership": 174,
+    "fragment_signature": 2,
+    "bead_types_only": 1
+   },
+   "by_mapping_origin": {
+    "ndx": 174
+   },
+   "diagnostics": {
+    "SM3:4NIAN:opt": [
+     "heavy atoms [6] are in no bead of the source mapping: not a complete mapping precedent"
+    ],
+    "SM3:4NIAN:cog": [
+     "heavy atoms [6] are in no bead of the source mapping: not a complete mapping precedent"
+    ],
+    "POLYPLY-M3:PEO": [
+     "polymer building blocks: no atom-level mapping in the source; exact transfer needs a verified atom mapping"
+    ]
+   }
+  },
+  "ff300": {
+   "records": 74,
+   "beads": 143,
+   "beads_with_signature": 140,
+   "by_mapping_support": {
+    "atom_membership": 73,
+    "bead_types_only": 1
+   },
+   "by_mapping_origin": {
+    "single_bead": 34,
+    "cgsmiles_placement": 33,
+    "curated": 6
+   },
+   "diagnostics": {
+    "FF300:solvent:OCE": [
+     "bead C4h#2: type C4 from the ITP (CGSmiles says C4h)"
+    ],
+    "FF300:solvent:DISH": [
+     "bead SN3a#2: type SN3ar from the ITP (CGSmiles says SN3a)"
+    ],
+    "FF300:solvent:DXE": [
+     "beads ['SN3r#1', 'SN3r#2']: type SN3ar from the ITP (CGSmiles types differ)"
+    ],
+    "FF300:solvent:TXE": [
+     "CGSmiles has 4 beads, the ITP 3: another model; ITP bead types only"
+    ],
+    "FF300:solvent:DISS": [
+     "bead SC5#2: type SC6 from the ITP (CGSmiles says SC5)"
+    ]
+   }
+  },
+  "bible": {
+   "records": 334,
+   "beads": 885,
+   "beads_with_signature": 833,
+   "by_mapping_support": {
+    "atom_membership": 279,
+    "none": 19,
+    "bead_types_only": 10,
+    "fragment_signature": 26
+   },
+   "by_mapping_origin": {
+    "cgsmiles_placement": 279
+   },
+   "diagnostics": {
+    "BIBLE:row74": [
+     "bad fragment '$SN4a=[$]COC[$]'"
+    ],
+    "BIBLE:row130": [
+     "unparsed CG block '[#TC3]([#TC3A])|3'"
+    ],
+    "BIBLE:row151": [
+     "bead TN5a#1 (N(*)=C*) does not occur in the source SMILES"
+    ],
+    "BIBLE:row161": [
+     "bead TN6a#1 (c(*)(*)=O) does not occur in the source SMILES"
+    ],
+    "BIBLE:row164": [
+     "bead SC4#1 ([50C](*)cc[50C]*) does not occur in the source SMILES"
+    ],
+    "BIBLE:row175": [
+     "bead TN6a#1 (c(*)(*)=O) does not occur in the source SMILES"
+    ],
+    "BIBLE:row179": [
+     "bead TN5a#1 (N(*)=C*) does not occur in the source SMILES"
+    ],
+    "BIBLE:row186": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row200": [
+     "bead TN6d#1 (N(*)*) does not occur in the source SMILES"
+    ],
+    "BIBLE:row211": [
+     "fragment TC4 not defined"
+    ],
+    "BIBLE:row212": [
+     "fragment TC4 not defined"
+    ],
+    "BIBLE:row213": [
+     "fragment TC4 not defined"
+    ],
+    "BIBLE:row214": [
+     "fragment TC4 not defined"
+    ],
+    "BIBLE:row215": [
+     "fragment TC4 not defined"
+    ],
+    "BIBLE:row216": [
+     "fragment TC4 not defined"
+    ],
+    "BIBLE:row217": [
+     "fragment TC4 not defined"
+    ],
+    "BIBLE:row218": [
+     "fragment TC4 not defined"
+    ],
+    "BIBLE:row219": [
+     "fragment TC4 not defined"
+    ],
+    "BIBLE:row220": [
+     "fragment TC4 not defined"
+    ],
+    "BIBLE:row221": [
+     "fragment TC4 not defined"
+    ],
+    "BIBLE:row222": [
+     "fragment TC4 not defined"
+    ],
+    "BIBLE:row223": [
+     "fragment TC4 not defined"
+    ],
+    "BIBLE:row224": [
+     "fragment TC4 not defined"
+    ],
+    "BIBLE:row225": [
+     "fragment TC4 not defined"
+    ],
+    "BIBLE:row230": [
+     "the fragments do not partition the source molecule (squash operator, repeats or weights not resolved)"
+    ],
+    "BIBLE:row235": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row243": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships",
+     "2 different placements of this bead on the source molecule"
+    ],
+    "BIBLE:row245": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships",
+     "2 different placements of this bead on the source molecule"
+    ],
+    "BIBLE:row267": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row269": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row272": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row273": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row277": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row278": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row279": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row281": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row288": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row290": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row291": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row292": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row293": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row294": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row295": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row296": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row297": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row298": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row299": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row304": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row307": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships",
+     "2 different placements of this bead on the source molecule"
+    ],
+    "BIBLE:row314": [
+     "CGSmiles fragments fit the molecule in non-equivalent ways: signatures only, no atom memberships"
+    ],
+    "BIBLE:row326": [
+     "the fragments do not partition the source molecule (squash operator, repeats or weights not resolved)"
+    ],
+    "BIBLE:row332": [
+     "RDKit cannot parse '=*(*)\\\\[C](*)C'"
+    ],
+    "BIBLE:row333": [
+     "placement search limit reached"
+    ],
+    "BIBLE:row334": [
+     "RDKit cannot parse '=C(*)C(*)CC'"
+    ],
+    "BIBLE:row335": [
+     "placement search limit reached"
+    ]
+   }
+  },
+  "method_evidence": {
+   "records": 130,
+   "by_kind": {
+    "method_rule": 12,
+    "table_row": 115,
+    "data_table": 3
+   }
+  }
+ }
+}

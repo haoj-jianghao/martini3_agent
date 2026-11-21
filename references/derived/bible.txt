@@ -1,0 +1,844 @@
+                                Martini Bible - Page 1 of 17
+             0                                      O
+ 4-bromobenzenesulfonamide                                          CH1        CH1
+
+            P5                         NH2          S           C                    C         Br     {[#SX2]1[#TC5][#TC5A]1[#P5]}
+                                                    O               CH1        CH1
+
+
+
+
+            1                                           O
+    benzenesulfonamide                                                  CH1       CH1
+
+            P4                              O           S           C                 CH1             {[#TC5]1[#TC5][#TC5A]1[#P4]}
+                                                    NH2                 CH1       CH1
+
+
+
+
+              2                                     O
+4-methylsulfonylchlorobenzene                                       CH1        CH1
+
+              P4                        O           S           C                    C         Cl     {[#SX3]1[#TC5][#TC5A]1[#P4]}
+                                                CH3                 CH1        CH1
+
+
+
+
+             3                                                                 CH1
+N-hydroxybenzenesulfonamide             OH1         NH1
+                                                                        CH1
+                                                                                        CH1
+            P4                                                          C
+                                                                                     CH1
+                                                                                                      {[#TC5]1[#TC5][#TC5]1[#P4]}
+                                                            S
+                                                O                             CH1
+                                                                O
+
+
+
+
+             4                                                                    CH1
+      Methyl-benzoate                           O
+                                                                        CH1
+
+           N4a                        CH3
+                                                            C       C
+                                                                                         CH1
+                                                                                                    {[#TC5A]21[#TC5][#TC5A]2[#N4a]1}
+                                                                            CH1      CH1
+                                                    O
+                           Martini Bible - Page 2 of 17
+            5                                O
+benzenesulfonamide_decoy                                   CH1       CH1
+
+           N4a                       O        S        C                 CH1           {[#TC5]1[#TC5][#TC5A]1[#N4a]}
+                                             NH2           CH1       CH1
+
+
+
+
+            6
+     n-butyl acetate             CH3               O               CH2           CH3
+           C2                            C              CH2               CH2                 {[#C2][#SN4a]}
+                                         O
+
+
+
+
+           7
+        hexanal
+          C1                     O
+                                       CH1
+                                              CH2
+                                                       CH2
+                                                               CH2
+                                                                         CH2
+                                                                                CH3
+                                                                                              {[#C1][#SN6a]}
+
+
+
+
+            8
+      Iodobenzene                              CH1      CH1
+
+           X1                            CH1                   C          I                {[#X1]1[#TC5][#TC5]1}
+                                               CH1      CH1
+
+
+
+
+            9                                 CH1      CH1
+      2-Iodophenol
+           X1                            CH1                   C      OH1
+                                                                                          {[#X1]1[#SN6][#TC5]1}
+                                              CH1          C
+
+                                                               I
+                 Martini Bible - Page 3 of 17
+                                                     OH1
+     10
+  D-xylose                                O     CH1
+
+    SP4r               OH1           CH1
+                                                      CH1    OH1   {[#SP4r]1.2[#TP1].3[#SP1r]1.[#TC4]23}
+                              CH2              CH1
+
+                                                OH1
+
+
+
+
+      11
+   butanol
+     SP1                     OH1
+                                    CH2
+                                              CH2
+                                                     CH2
+                                                            CH3               {[#TC2][#SP1]}
+
+
+
+                                                OH1
+     12
+  D-xylose                    CH2              CH1
+    SP1r               OH1           CH1
+                                                      CH1    OH1   {[#SP4r]1.2[#TP1].3[#SP1r]1.[#TC4]23}
+                                          O     CH1
+
+                                                     OH1
+
+
+
+
+      13                                      CH1
+1,3-Benzendiol                      CH1              CH1
+     SN6                             C                C
+                                                                         {[#SN6]1[#SN6][#TC5]1}
+                             OH1              CH1           OH1
+
+
+
+
+      14
+Cyclopentanol                       CH2       CH2
+     SN6                           CH2          CH1        OH1
+                                                                             {[#SN6]=[#SC3]}
+                                          CH2
+                Martini Bible - Page 4 of 17
+      15                                        OH1
+
+2-Iodophenol                    CH1         C
+     SN6                   CH1                    C          I                {[#X1]1[#SN6][#TC5]1}
+                                CH1         CH1
+
+
+
+
+    16
+  hexanal
+   SN6a               O
+                          CH1
+                                CH2
+                                        CH2
+                                                  CH2
+                                                            CH2
+                                                                       CH3       {[#C1][#SN6a]}
+
+
+
+
+     17
+n-pentylamine              CH2
+                                      CH2
+    SN6d                                    CH2
+                                                       CH2                      {[#SC2][#SN6d]}
+                          NH2                                    CH3
+
+
+
+
+     18
+   Aniline                       CH1        CH1
+
+    SN6d                    CH1                   C         NH2              {[#SN6d]1[#TC5][#TC5]1}
+                                 CH1        CH1
+
+
+
+
+     19
+ Piperidine                       CH2           CH2
+
+   SN6d                         CH2                   NH1                       {[#SN6d]=[#SC3]}
+                                  CH2           CH2
+                      Martini Bible - Page 5 of 17
+        20                                                  NH2
+
+benzene-1,2-diamine                    CH1              C
+       SN6d                       CH1                           C      NH2               {[#SN6d]1[#SN6d][#TC5]1}
+                                       CH1          CH1
+
+
+
+
+        21                                                  CH1         CH1
+ 2-methylquinoline                      N           C
+       SN6a                CH3    C                                         CH1   {[#TC5]1[#TC5B][#TC5A]12[#TC5][#SN6aB]2}
+                                                            C         CH1
+                                   CH1        CH1
+
+
+
+
+        22
+     Butanone                                           CH2
+       SN5a                       CH3
+                                                C
+                                                                      CH3
+                                                                                              {[#TC3][#SN5a]}
+                                                O
+
+
+
+
+         23
+   1,3-Dioxolane                                    O
+
+       SN5a                             CH2                     CH2
+                                                                                             {[#SN5a]=[#TC3]}
+                                            CH2             O
+
+
+
+
+        24
+   ethylacetate                                     O           CH2
+      SN4a                       CH3        C                         CH3                     {[#TC3][#SN4a]}
+                                                    O
+                    Martini Bible - Page 6 of 17
+        25
+ Tetrahydropyran                               CH2            O
+
+      SN4a                                 CH2                    CH2                        {[#SC3]=[#SN4a]}
+                                               CH2           CH2
+
+
+
+
+        26                                     CH3
+Methyl propanoate                                        CH2
+      SN4a                                                   C                                {[#TC3][#SN4a]}
+                                       CH3                               O
+                                                     O
+
+
+
+
+       27                                                          CH1
+  Acetophenone                 CH3
+                                                     CH1
+                                                                         CH1
+      SN4a                                 C
+                                                     C                               {[#TC5A]21[#TC5][#TC5A]2[#SN4a]1}
+                                                                      CH1
+                                                             CH1
+                                       O
+
+
+
+
+                                               CH3
+       28                                                          CH1
+2-Nitro-m-xylene                   O
+                                                         C
+                                                                         CH1
+      SN3a                                 N
+                                                     C                                {[#SC4]21[#TC5][#SC4]2[#SN3a]1}
+                                                                      CH1
+                                                              C
+                                       O
+                                                         CH3
+
+
+
+
+        29                                                                   O
+
+  4-Nitroanisole                           CH1
+                                                     CH1
+                                                                             N
+      SN3a               CH3
+                                                                  C
+                                                                                 O   {[#SN3a]1[#TC5]2[#SN2a][#TC5]12}
+                                           C
+                               O                             CH1
+                                                 CH1
+                      Martini Bible - Page 7 of 17
+        30                                                                O
+
+  4-Nitroanisole                         CH1
+                                                    CH1
+                                                                        N
+      SN2a                 CH3
+                                                              C
+                                                                              O   {[#SN3a]1[#TC5]2[#SN2a][#TC5]12}
+                                         C
+                                  O                         CH1
+                                                  CH1
+
+
+
+
+        31                             CH3
+N,N-dimethylaniline                                         CH1
+                                                                    CH1
+       SN1                        CH3
+                                         N
+                                                   C
+                                                                        CH1
+                                                                                  {[#TC5A]21[#TC5][#TC5A]2[#SN1]1}
+                                                    CH1
+                                                                  CH1
+
+
+
+
+        32
+      hexyne                                      CH2
+       SC6                       CH1
+                                        C                   CH2
+                                                                   CH2
+                                                                            CH3
+                                                                                           {[#SC2][#SC6]}
+
+
+
+
+       33                                           CH3
+dimethylsulfoxide
+      SC6                                               S                                  {[#SC6][#TP6]}
+                                              O               CH3
+
+
+
+
+        34
+    Thiophenol                               CH1        CH1
+
+       SC6                              CH1                   C         SH1            {[#SC6]1[#TC5][#TC5]1}
+                                             CH1        CH1
+                      Martini Bible - Page 8 of 17
+        35                                                SH1
+
+2-aminobenzenethiol                    CH1           C
+       SC6                         CH1                     C         NH2          {[#SN6d]1[#SC6][#TC5]1}
+                                       CH1       CH1
+
+
+
+
+        36
+      hexene
+       SC4                   CH2       CH1                     CH2       CH3
+                                                                                       {[#SC2][#SC4]}
+                                           CH2           CH2
+
+
+
+
+        37
+   12-Butadiene                                      CH2
+       SC4                     CH2
+                                           CH1
+                                                                  CH3                  {[#TC3][#SC4]}
+
+
+
+
+        38
+ 2-Methyl-pyridine                       CH1         CH1
+
+       SC4                         CH1                        C         CH3        {[#SC4]1[#TN6a][#TC5]1}
+                                         CH1          N
+
+
+
+
+                                           CH3
+         39                                                    CH1
+ 2-Nitro-m-xylene             O
+                                                     C
+                                                                        CH1
+        SC4                            N
+                                                 C                             {[#SC4]21[#TC5][#SC4]2[#SN3a]1}
+                                                                   CH1
+                                                          C
+                                   O
+                                                     CH3
+                                Martini Bible - Page 9 of 17
+             40
+        Cyclohexene                               CH2       CH2
+
+            SC4                               CH2               CH2                     {[#SC4]=[#SC3]}
+                                                  CH1       CH1
+
+
+
+
+                                              O
+              41
+2,5-dimethyl-1,4-benzoquinone                       C       CH1
+
+             SC4                       CH3    C                     C     CH3   {[#TN6a]1[#SC4]2[#TN6a][#SC4A]12}
+                                                  CH1       C
+
+                                                                    O
+
+
+
+
+             42
+      Tetrahydropyran                             CH2       CH2
+
+            SC3                               CH2               CH2                     {[#SC3]=[#SN4a]}
+                                                  CH2       O
+
+
+
+
+             43                                              CH3
+    Methyl methacrylate
+            SC3                         CH3
+                                              O
+                                                        C
+                                                                C
+                                                                        CH2              {[#SC3][#SN4a]}
+                                                        O
+
+
+
+
+             44
+        Cyclohexene                               CH2       CH2
+
+            SC3                               CH2               CH1                     {[#SC4]=[#SC3]}
+                                                  CH2       CH1
+                    Martini Bible - Page 10 of 17
+      45
+    hexyne                                     CH2
+     SC2                   CH1
+                                      C                  CH2
+                                                                   CH2
+                                                                          CH3
+                                                                                                {[#SC2][#SC6]}
+
+
+
+
+       46                                                        CH3
+iso-butyl acetate                                                  CH1
+      SC2                   O
+                                      C
+                                                O
+                                                         CH2                 CH3               {[#SC2][#SN4a]}
+                                      CH3
+
+
+
+
+        47                                                   F
+trifluoroethanol                              CH2
+      SX4e                       OH1
+                                                         C
+                                                                   F
+                                                                                               {[#SX4e][#TP1d]}
+                                                     F
+
+
+
+
+      48                               F
+Benzotrifluoride                                         CH1       CH1
+
+     SX4e                   F             C         C                    CH1          {[#TC5A]21[#TC5][#TC5A]2[#SX4e]1}
+                                       F                 CH1       CH1
+
+
+
+
+        49                            CH1
+                                                    N
+8-fluoroquinoline               CH1                                      F
+      SX4e                       CH1
+                                                        C
+                                                                   C               {[#TC5]1[#SX4e][#TC5A]12[#TC5][#TN6aB]2}
+                                               C
+                                                                   CH1
+                                                CH1
+                                                             CH1
+                    Martini Bible - Page 11 of 17
+       50
+ Chlorobenzene                      CH1   CH1
+
+      SX3                     CH1               C      Cl   {[#SX3]1[#TC5][#TC5]1}
+                                    CH1   CH1
+
+
+
+
+        51                      CH1       CH1
+ 2-chloroaniline
+       SX3                    CH1               C     Cl
+                                                            {[#SN6d]1[#SX3][#TC5]1}
+                                CH1       C
+
+                                              NH2
+
+
+
+
+      52
+ Bromobenzene                       CH1   CH1
+
+     SX2                      CH1               C      Br   {[#SX2]1[#TC5][#TC5]1}
+                                    CH1   CH1
+
+
+
+
+       53                       CH1       CH1
+ 2-bromophenol
+      SX2                     CH1               C     OH1
+                                                            {[#SX2]1[#SN6][#TC5]1}
+                                CH1       C
+
+                                                Br
+
+
+
+
+       54                                 O
+dimethylsulfoxide
+      TP6                                 S                     {[#SC6][#TP6]}
+                                CH3             CH3
+                   Martini Bible - Page 12 of 17
+     55                                           O
+Propaneamide
+    TP6a                          NH2
+                                              C
+                                                                 CH3
+                                                                                        {[#TC3][#TP6a]}
+                                                      CH2
+
+
+
+
+     56
+propionic acid                                        CH2
+    TP2a                          OH1
+                                              C
+                                                                 CH3
+                                                                                        {[#TC3][#TP2a]}
+                                                  O
+
+
+
+
+                                                      OH1
+      57
+   D-xylose                     CH2                   CH1
+     TP1                  OH1               CH1
+                                                               CH1      OH1   {[#SP4r]1.2[#TP1].3[#SP1r]1.[#TC4]23}
+                                             O         CH1
+
+                                                               OH1
+
+
+
+
+        58
+trifluoroethanol                                  F
+
+      TP1d                        OH1
+                                        CH2
+                                                       C
+                                                                    F
+                                                                                        {[#SX4e][#TP1d]}
+                                                           F
+
+
+
+
+      59
+   p-Cresol                                 CH1        CH1
+
+     TN6                    CH3         C                       C       OH1     {[#TN6]1[#TC5]2[#TC5A][#TC5]12}
+                                            CH1        CH1
+                    Martini Bible - Page 13 of 17
+        60                            CH1
+  2-Ethylpyrdine                                CH1
+       TN6a                     CH1
+                                                   C
+                                                                        CH3
+                                                                               {[#TC3][#TN6a]1[#TC5][#TC5]1}
+                                                                  CH2
+                                 CH1
+                                            N
+
+
+
+
+       61
+2-Methyl-pyridine                     CH1         N
+
+     TN6a                        CH1                      C        CH3            {[#SC4]1[#TN6a][#TC5]1}
+                                      CH1       CH1
+
+
+
+
+        62
+Para-benzoquinone                         CH1     CH1
+
+      TN6a                  O         C                       C         O     {[#TN6a]1[#TC5]2[#TN6a][#TC5]12}
+                                          CH1     CH1
+
+
+
+
+       63
+ Cyclopentanone                       CH2       CH2
+      TN6a                        CH2                 C            O
+                                                                                     {[#TN6a]=[#SC3]}
+                                            CH2
+
+
+
+
+       64
+   Pyrrolidine                               CH2
+
+     TN6d                             CH2              NH1
+                                                                                     {[#TN6d]=[#SC3]}
+                                          CH2     CH2
+                       Martini Bible - Page 14 of 17
+         65                                                       CH3
+
+2-methylhydroquinone                            CH1           C
+        TN6a                  OH1           C                      C         OH1   {[#TN6a]1[#SC4]2[#TN6a][#TC5]12}
+                                                CH1       CH1
+
+
+
+
+        66
+ 4-Methylimidazole                                   CH1          NH1
+       TN5a                           CH3        C                 CH1
+                                                                                       {[#TN5a]1[#TC4][#TN6d]1}
+                                                          N
+
+
+
+
+        67                                                        CH1
+   Benzaldehyde                                      CH1
+       TN4a                       O
+                                                  C
+                                                                        CH1
+                                                                                   {[#TC5A]21[#TC5][#TC5A]2[#TN4a]1}
+                                      CH1
+                                                                       CH1
+                                                       CH1
+
+
+
+
+        68
+    Benzonitrile                                      CH1          CH1
+
+       TN4a                   N        C          C                      CH1       {[#TC5A]21[#TC5][#TC5A]2[#TN4a]1}
+                                                      CH1          CH1
+
+
+
+
+        69
+  Tetrahydrofuran                               CH2        CH2
+       TN4a                                 CH2                   CH2
+                                                                                           {[#TN4a]=[#SC3]}
+                                                      O
+                    Martini Bible - Page 15 of 17
+       70
+ 2-methoxyfuran                                   CH1       CH1
+
+      TN3a                  CH3                   C                 CH1          {[#TC5]1[#TN2a][#TC5]1[#TN3a]}
+                                        O                   O
+
+
+
+
+      71                                                    CH1
+Methoxybenzene                                  CH1
+     TN2a                   CH3
+                                              C
+                                                                    CH1
+                                                                                {[#TC5A]21[#TC5][#TC5A]2[#TN2a]1}
+                                   O
+                                                                 CH1
+                                                      CH1
+
+
+
+
+       72
+1-Methylimidazole                                     CH1
+      TN1                         CH3       N                   CH1
+                                                                                     {[#TN6a]1[#TC5][#TN1]1}
+                                                CH1          N
+
+
+
+
+       73
+   Pyridazine                               CH1        CH1
+
+     TN1a                           CH1                         N                    {[#TN1a]1[#TC5][#TC5]1}
+                                            CH1         N
+
+
+
+
+        74                              CH1
+  Ethylbenzene                                    CH1
+       TC5                    CH1
+                                                        C
+                                                                          CH3
+                                                                                  {[#TC3][#TC5]1[#TC5][#TC5]1}
+                                                                    CH2
+                                   CH1
+                                              CH1
+                    Martini Bible - Page 16 of 17
+       75
+2-Methyl-pyridine                     CH1         N
+
+      TC5                         CH1                     C       CH3         {[#SC4]1[#TN6a][#TC5]1}
+                                      CH1         CH1
+
+
+
+
+       76
+     Pyrrole                                   NH1
+
+      TC5                             CH1               CH1
+                                                                             {[#TN5a]1[#TC5][#TN6d]1}
+                                          CH1         N
+
+
+
+
+       77
+    p-Cresol                              CH1       CH1
+
+      TC5                   CH3       C                       C     OH1   {[#TN6]1[#TC5]2[#TC5A][#TC5]12}
+                                          CH1       CH1
+
+
+
+
+       78
+ Methyl acrylate                  O
+                                                  CH1
+                                                              CH2
+      TC4                                  C                                     {[#TC4][#SN4a]}
+                                              O
+                                                      CH3
+
+
+
+
+       79
+4-Methylimidazole                             CH1         NH1
+      TC4                     CH3         C                CH1
+                                                                             {[#TN5a]1[#TC4][#TN6d]1}
+                                                  N
+                            Martini Bible - Page 17 of 17
+          80                                      CH1
+  ortho-Methylanisole                    CH1
+                                                                CH1
+                                                                                          CH3
+         TC4                                                      C
+                                                                                  O
+                                                                                                 {[#TC4]1[#SN2a]2[#TC5][#TC5]12}
+                                             CH1
+                                                            C
+
+                                                            CH3
+
+
+
+
+           81
+        butanal
+          TC3                            O
+                                                  CH1
+                                                            CH2
+                                                                      CH2
+                                                                                  CH3                   {[#TC3][#SN6a]}
+
+
+
+
+           82
+        butanol
+          TC2                           OH1
+                                                  CH2
+                                                            CH2
+                                                                      CH2
+                                                                                  CH3
+                                                                                                         {[#TC2][#SP1]}
+
+
+
+
+           83
+pyridazine, 3,6-dichloro-                               N             N
+
+          TX3                       Cl            C                           C           Cl     {[#TX3]1[#TC5]2[#TX3][#TN1a]12}
+                                                      CH1         CH1
+
+
+
+
+          84
+    4-Bromoanisole                                    CH1        CH1
+         TX2                       Br         C
+                                                                          C           O
+                                                                                           CH3
+                                                                                                 {[#SN2a]1[#TC5]2[#TX2][#TC5]12}
+                                               CH1          CH1
+

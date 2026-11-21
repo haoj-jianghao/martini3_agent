@@ -1,0 +1,9 @@
+## 4. Derive bonded model
+
+The pipeline derives every bonded term after the design is complete (stage 4). It takes the SMILES and the frozen mapping, and writes `decisions/bonded.json`. Bonded terms, exclusions and `nrexcl` are not design decisions, and `bonded.json` is not edited. The method: conformer minima and Hessians under the supplied OPLS-AA topology (no MD), a harmonic-superposition ensemble mapped onto the beads, and Boltzmann inversion of its distributions.
+
+Your remaining decisions are in the mapping:
+1. **Fused rings.** Follow the SI hinge (Souza SI section C4, p. 45-46), as the published polycyclics do (NAPH, QUIN, ANTH, CAFF, TECE): four real beads forming the hinge, and the other ring beads as virtual sites. Declare each with `design_vsite`, with `construction` set to `virtual_sitesn_cog` (centre of the constructing beads) or `virtual_sites3` (an in-plane position). You choose the site and its constructing beads; stage 4 computes the coefficients. A rigid group above four real beads is `blocked`, so change the mapping. If a site is over 0.05 nm from its mapped position, change the construction or move side-chain atoms out of that bead. Avoid a near-straight rigid triangle (`near_linear_rigid_triangle`).
+2. **Masses** are computed, not chosen. Each bead gets its standard size mass (R 72, S 54, T 36), each virtual site 0, and each site's standard mass is split equally over the real beads of its rigid group, keeping the total (CAFF 4 × 63, BZIM 4 × 45). A site outside any rigid group passes its mass to its constructing beads. Stage 4 and `build` use the same rule (`bead_masses`) and record it in `bonded.json` `masses`. There is no mass decision to record.
+
+`bonded.json` records `flags`, a `dropped` list, and any term whose `limitations` says a value was capped or floored. If stage 4 fails (the topology, the OPLS engine or the energy model), the model is `blocked`; it is reported, and no hand-chosen values are substituted.

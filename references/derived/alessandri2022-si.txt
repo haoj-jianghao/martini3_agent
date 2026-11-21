@@ -1,0 +1,649 @@
+                    Supporting information for:
+          Martini 3 Coarse-Grained Force Field:
+                              Small Molecules
+
+    Riccardo Alessandri,⇤,†,§ Jonathan Barnoud,†,k Anders S. Gertsen,‡ Ilias
+
+Patmanidis,† Alex H. de Vries,† Paulo C. T. Souza,⇤,†,¶ and Siewert J. Marrink⇤,†
+
+ †Groningen Biomolecular Sciences and Biotechnology Institute and Zernike Institute for
+  Advanced Materials, University of Groningen, Nijenborgh 7, 9747 AG Groningen, The
+                                       Netherlands
+   ‡Department of Energy Conversion and Storage, Technical University of Denmark,
+                     Fysikvej 310, DK-2800 Kgs. Lyngby, Denmark
+  ¶Current address: Molecular Microbiology and Structural Biochemistry (MMSB, UMR
+    5086), CNRS & University of Lyon, 7 Passage du Vercors, 69007, Lyon, France
+   §Current address: Pritzker School of Molecular Engineering, University of Chicago,
+                          Chicago, Illinois 60637, United States
+kCurrent address: Intangible Realities Laboratory, University of Bristol, Bristol BS8 1UB,
+                                           U.K.
+
+          E-mail: ric.alessandri@gmail.com; paulocts@gmail.com; s.j.marrink@rug.nl
+
+
+
+
+                                            S1
+Contents
+
+1 COG- vs COM-Based Mappings: Benzene and Cyclohexane S3
+
+2 COG- vs COM-Based Mappings: Alkanes                         S4
+
+3 Advanced Model Design Strategies                            S5
+
+4 LINCS Settings                                              S6
+
+5 Solvent Accessible Surface Area Calculations                S7
+
+6 Solvent Properties: Mass Density with COG-Mapping           S8
+
+7 Mixture Simulations: Miscibility Assays                     S8
+
+8 Vapor–Liquid Equilibrium Simulations                        S9
+
+9 Stacking Interactions: Dimerization Free Energy Landscapes S10
+
+10 Database: List of Molecules                               S11
+
+References                                                   S14
+
+
+
+
+                                 S2
+1     COG- vs COM-Based Mappings: Benzene and Cyclohexane
+
+(a)                         (b) 1.4                                         exp          (c) 250         COM-mapped AA
+                                                1.3                         CG                           COG-mapped AA
+                                                                                             200
+
+
+
+
+                              Density (g cm )
+                                                1.2
+
+
+
+
+                              −3
+                                                                                             150
+                                                1.1
+
+                                                 1                                           100
+                                                0.9
+                                                                                              50
+                                                0.8
+
+                                                0.7                                            0
+                                                      0.22 0.24 0.26 0.28 0.3     0.32             0.1   0.2     0.3     0.4   0.5
+                                                             bond distance (nm)                          bond distance (nm)
+
+(d)                        (e) 1.3                                          exp          (f) 250         COM-mapped AA
+                                                1.2                         CG                           COG-mapped AA
+                                                                                             200
+                              Density (g cm )
+
+
+
+
+                                                1.1
+                              −3
+
+
+
+
+                                                                                             150
+                                                 1
+
+                                                0.9                                          100
+                                                0.8
+                                                                                              50
+                                                0.7
+
+                                                0.6                                            0
+                                                      0.3 0.32 0.34 0.36 0.38 0.4 0.42             0.2   0.3     0.4     0.5   0.6
+                                                             bond distance (nm)                          bond distance (nm)
+
+
+Figure S1: Benzene and cyclohexane bonded parameters. Bond lengths based on center-
+of-mass (COM) mapping—(a), (d), red—proved to be unsatisfactory, leading to too high
+packing densities (b), (e). Instead, center-of-geometry (COG)-based bond lengths–(a), (d),
+green—lead to densities close to experimental values (b), (e). The bond distributions for
+COM- and COG-mapped benzene (c) and cyclohexane (f) are also shown.
+
+
+
+
+                                                               S3
+2    COG- vs COM-Based Mappings: Alkanes
+
+                (a) 20           COM-mapped AA                (b) 20          COM-mapped AA
+                                 COG-mapped AA                                COG-mapped AA
+                     15                                           15
+
+
+                     10                                           10
+
+
+                      5                                            5
+
+
+                      0                                            0
+                          0.3   0.4      0.5      0.6   0.7            0.3   0.4      0.5      0.6   0.7
+                                 bond distance (nm)                           bond distance (nm)
+
+
+
+
+Figure S2: Alkane bonded parameters extracted from all-atom (AA) simulations of hex-
+adecane solvated in hexane. CG models are built by mapping 4 C atoms, and associated
+hydrogens, to each regular bead. Bonded distributions extracted using COM (red) and COG
+(green) mappings for the (a) central -central and (b) central -terminal bead. The average dis-
+tance is 0.461 nm (COM) and 0.466 nm (COG) in (a) and 0.463 nm (COM) and 0.481 nm
+(COG) in (b), indicating a negligible di↵erence for (a) and a small one for (b).
+
+
+
+
+                                                          S4
+3         Advanced Model Design Strategies
+
+    (a)                                      (b)                                     (c) 0.16            CG (k = 100)
+                                                                                          0.14           CG (k = 200)
+                                                                                                           GROMOS
+                                                                                          0.12
+                                                                                                               OPLS
+                                                                                           0.1
+                                                                                          0.08
+                                                                                          0.06
+                                                                                          0.04
+                                                                                          0.02
+                                                                                             0
+                                                   4 particles, 1 virtual site               −90 −60 −30      0    30 60   90
+           5 particles, 8 constraints                                                               dihedral angle (deg)
+                                              5 constraints, 1 (improper) dihedral
+
+    (d)                             (e)                                 (f)
+                                                                                        VS          VS
+                                        VS         VS
+              VS
+                                                                                             VS
+
+                                                                                        VS          VS
+                                                   VS
+
+
+Figure S3: (top) Possible Martini models for naphthalene. (a) An “all-constraints” model
+that readily leads to numerical instabilities and (b) a “hinge” model that runs with a time
+step of 20 fs. A schematic representation of the CG model is drawn on top of the chemical
+structure of naphthalene: the grey circle with solid red contour indicates a CG particle,
+while a gray circle with a dashed cyan contour represents a virtual site. Solid red lines
+indicate constraints. The “hinge” model also uses an improper dihedral (between the four
+vertices of the model) to keep the model flat. A comparison of this dihedral distribution to
+reference COG-mapped atomistic distributions is shown in (c) for two improper dihedral force
+constants, 100 kJ mol 1 rad 2 and 200 kJ mol 1 rad 2 . Nonbonded interactions between
+the two CG sites which share no bond in the “hinge” model—top left and bottom right in
+(b)—are excluded. (bottom) Example topologies using the “hinge” model. (d) Rendering of
+the naphthalene (NAPH) model of panel (b). (e) Rendering of the ca↵eine model: the model
+uses the “hinge” construction and additionally three virtual sites are built from the hinge
+sca↵old. (f) Rendering of the tetracene model: the model uses the “hinge” construction and
+additionally five virtual sites are built from the hinge sca↵old. Virtual sites are indicated
+with the label “VS”.
+
+
+
+
+                                                             S5
+4    LINCS Settings
+
+      (a) 6200                                                                      (b) 4050                                                                       (c) 670
+                                                                                                                             4000                                                                          660
+                                              6150
+                                                                                                                             3950                                                                          650
+      contacts A-B (#)
+
+
+
+
+                                                                                     contacts A-B (#)
+
+
+
+
+                                                                                                                                                                   contacts A-B (#)
+                                              6100                                                                           3900                                                                          640
+                                                                                                                             3850                                                                          630
+                                              6050                                                                                                                                                         620
+                                                                                                                             3800
+                                              6000                                                                                                                                                         610
+                                                                                                                             3750                                                                          600
+                                              5950                                                                           3700                                                                          590
+                                                                                                                             3650                                                                          580
+                                              5900
+                                                                                                                             3600                                                                          570
+                                              5850                                                                           3550                                                                          560
+                                                      lincs41lincs82 15fs gmx'20                                                     lincs41lincs82 15fs gmx'20                                                  lincs41 lincs82 15fs gmx'20
+      contacts A-B (err. % w.r.t. lincs41)
+
+
+
+
+                                                                                     contacts A-B (err. % w.r.t. lincs41)
+
+
+
+
+                                                                                                                                                                   contacts A-B (err. % w.r.t. lincs41)
+                                              8                                                                              8                                                                             8
+                                              6                                                                              6                                                                             6
+                                              4                                                                              4                                                                             4
+                                              2                                                                              2                                                                             2
+                                              0                                                                              0                                                                             0
+                                             −2                                                                             −2                                                                            −2
+                                             −4                                                                             −4                                                                            −4
+                                             −6                                                                             −6                                                                            −6
+                                             −8                                                                             −8                                                                            −8
+                                                  lincs41 lincs82   15fs   gmx'20                                                lincs41 lincs82   15fs   gmx'20                                               lincs41 lincs82   15fs   gmx'20
+
+                                                              298.15 K                                                                       298.15 K                                                                      298.15 K
+                                              310                                                                            310                                                                           310
+      temperature (K)
+
+
+
+
+                                                                                     temperature (K)
+
+
+
+
+                                                                                                                                                                   temperature (K)
+
+                                              300                                                                            300                                                                           300
+
+
+                                              290                                                                            290                                                                           290
+
+
+                                              280                                                                            280                                                                           280
+
+                                                     lincs41 lincs82 15fs gmx'20                                                    lincs41 lincs82 15fs gmx'20                                                  lincs41 lincs82 15fs gmx'20
+
+Figure S4: LINCS settings have no significant impact on mixtures. (a) Benzene-cyclohexane,
+which mix quite well; (b) benzene-ethanol, mildly phase-separating; (c) benzene-water,
+strongly phase-separating. lincs41 refers to the default LINCS settings (order=4, iter=1);
+lincs82 (order=8, iter=2); 15fs uses a time step of 15 fs (instead of the default 20 fs);
+gmx‘20 uses Gromacs 2020 (instead of 2016.5). Systems are ⇡(5.5 nm)3 ; contacts and tem-
+peratures are averaged over the last 350 ns of 400 ns long MD. In the temperature plots, the
+gray bar represents the temperature of benzene, the other bar the one of the other compo-
+nent. Error bars are standard deviations (last 350 ns). Default Martini “new” settings.
+
+
+
+
+                                                                                                                                           S6
+5     Solvent Accessible Surface Area Calculations
+
+SASA Calculation Details. Solvent Accessible Surface Area (SASA) values have been
+computed using the GROMACS tool gmx sasa on energy-minimized AA or CG geometries.
+At both levels, we use the command:
+
+gmx sasa -s benzene . gro -o sasa . xvg - probe 0.191 - ndots 4800
+
+    where the -ndots flag, which specifies the number of grid points used to calculate the
+SASA, should be set at least to 4800 for accurate values, and the probe size of 0.191 nm
+                                                            T
+corresponds to the van der Waals (vdW) radius of a T-bead, rvdW , that is:
+
+                                           p                      p
+                              dT T         6
+                                               2·       T T
+                                                                  6
+                                                                      2 · 0.34
+                    T
+                   rvdW    T
+                        = rm = m       =                      =                = 0.191 nm   (1)
+                                   2                2                   2
+
+    where   T T   is the LJ    parameter of T-T interactions, i.e., 0.34 nm. The probe size
+impacts the absolute SASA values, but not their relative di↵erences (Table S1). For the CG
+calculations, the file vdwradii.dat from
+
+/ usr / local / gromacs - XXX / share / gromacs / top / vdwradii . dat
+
+(where XX could be any gromacs version) should be copied to the folder where the gmx
+sasa command is executed. The file, containing default vdW radii for atomistic force fields,
+should be modified so as to contain the vdW radii of Martini beads (computed as done for
+a T-bead in Eq. 1). Note that the vdW radii database file contains radii associated to atom
+names (and not atom or bead types). For the atomistic SASA calculations, we used the radii
+from Rowland and Taylor S1 (the file can be found at https://github.com/ricalessandri/
+Martini3-small-molecules).
+    Table S1 shows also that there is negligible di↵erence between di↵erent all-atom force
+fields.
+
+
+
+
+                                                    S7
+Table S1: Solvent Accessible Surface Area (SASA) values in nm2 for several rings with
+di↵erent all-atom force fields. Values in parentheses are computed using a T-bead sized
+probe, while the other values use the default probe of gmx sasa. Relative errors (%) of the
+Martini values (which are based on COG-mapping) with respect to the two all-atom force
+fields are also shown. BENZ = benzene; NAPH = naphthalene; CYPO = cyclopentanone.
+
+                molecule       GROMOS             OPLS             Martini 3                    Err. %         Err. %
+                                                                                              (GROMOS)        (OPLS)
+                BENZ          2.433 (2.976)   2.437 (2.986)    2.293 (2.807)                   6% ( 6%)       6% ( 6%)
+                NAPH          3.108 (3.707)   3.106 (3.703)    3.035 (3.624)                   2% ( 2%)       2% ( 2%)
+                CYPO          2.538 (3.073)   2.523 (3.063)    2.406 (2.935)                   5% ( 5%)       5% ( 5%)
+
+
+6                    Solvent Properties: Mass Density with COG-Mapping
+
+(a)                                                            (b)                5.5
+                     1.4
+                                                                                   5
+densityexp (g cm )
+                -3
+
+
+
+
+                                                                                  4.5
+                                                                   SASAAA (nm )
+
+
+                     1.2
+                                                                2
+
+
+
+
+                                                                                   4
+                      1
+                                                                                  3.5
+
+                     0.8                      linear                               3
+                                           aliphatic                                                      aliphatic
+                                           aromatic                               2.5                     aromatic
+                     0.6
+                        0.6    0.8     1       1.2     1.4                              2.5    3    3.5   4    4.5    5   5.5
+                                                 -3                                                            2
+                                 densityCG (g cm )                                                 SASACG (nm )
+
+Figure S5: Mass densities and SASA values obtained used COG-based mappings. Same as
+Figure 5c-d but using exclusively COG-based bond lengths for the Martini models.
+
+
+
+
+7                    Mixture Simulations: Miscibility Assays
+
+We compute the contacts between the two components A and B with the command:
+
+echo 0 1 | gmx mindist -f run . xtc                          -d 0.6 -n index . ndx - on contacts . xvg
+
+              where index.ndx contains two groups, one containing all the the beads of component
+A, the other all the beads of component B; run.xtc is the trajectory of the production
+
+
+                                                              S8
+phase (at least 400 ns long), and contacts.xvg contains the number of A-B contacts as a
+function of simulation time. Two examples are plotted in Figure S6a: binary mixtures either
+readily demix and thus show a low number of A-B contacts, e.g., benzene-water (BENZ-W)
+mixture, or stay mixed, as in the benzene-toluene (BENZ-TOLU) case.
+
+(a) 16000                         BENZ-TOLU
+                                                                      (b) 2                        10:90 (BENZ)
+                                                                                                                              (c)
+                 14000               BENZ-W                                                        10:90 (CLF)
+                 12000                                                                   1.6       50:50 (BENZ)
+
+
+
+                                                                      density (g cm−3)
+                                                                                                   50:50 (CLF)
+ # of contacts
+
+
+
+
+                 10000
+                                                                                         1.2
+                  8000
+                  6000                                                                   0.8
+                  4000
+                                                                                         0.4
+                  2000
+                     0                                                                    0
+                         0   10     20    30   40            50                            −8 −6 −4 −2 0 2        4   6   8
+                                   time (ns)                          0.05                            z (nm)
+                                                    density (g cm )
+                                                    −3
+
+
+
+
+                                                                      0.04
+                                                                      0.03
+                                                                      0.02
+                                                                      0.01
+                                                                         0
+                                                                          −8 −7 −6 −5 −4
+                                                                              z (nm)                                  BENZ/CLF
+
+Figure S6: (a) Typical evolutions of number of A-B contacts for a binary mixture: a low
+number of contacts—benzene-water (BENZ-W) mixture—indicate a phase separated sys-
+tems; a high number of contacts—benzene-toluene (BENZ-TOLU) mixture—indicate that
+the two components are miscible. (b) Typical density profiles (centered around the liquid
+phase) obtained from vapor–liquid equilibrium simulations; the inset shows the di↵erence
+in densities of the vapor phases. (c) Martini 3 vs experimental benzene-chloroform (BENZ-
+CLF) Gex curves as a function of mixture composition. x1 is the BENZ molar fraction.
+Experimental data are from Ref. S2.
+
+
+
+8                  Vapor–Liquid Equilibrium Simulations
+
+Method Details. Vapor and liquid densities were extracted with the GROMACS tool gmx
+density using the following command:
+
+echo A A | gmx density -f mix . xtc -s mix . tpr -d Z \
+                                                          -o A - density - Z . xvg - symm - center
+
+where “A” is the label of component A, e.g., “BENZ” or ”CLF”. With the first “A” we select
+the group around which the density profile should be centered; with the second “A” we select
+
+                                                                                                   S9
+the group for which we calculate the density. Typical profiles are shown in Figure S6b.
+       Benzene-Chloroform Mixture. Chloroform (and other chlorinated solvents such as
+chlorobenzene) is a widely used solvent in organic electronics. S3 Aromatic systems, especially
+if functionalized with alkyl side chains, show good solubilities in such a solvent. We there-
+fore also estimated quantitatively how the new Martini model performs with respect to the
+miscibility of chloroform and benzene by computing excess free energy of mixing ( Gex ) as
+a function of the composition of the mixture. The computed values, obtained as described
+in Section 2.3, are compared to experimental data S2 in Figure S6c.
+
+
+9           Stacking Interactions: Dimerization Free Energy Landscapes
+
+(a)                              (b)                             (e)
+       1                           1                             1
+                   GROMOS                       GROMOS
+                                                                       *       GROMOS
+cosθ
+
+
+
+
+       0                           0                             0         ‡
+
+
+
+       −1                         −1                             −1
+                                                                       *
+(c)                              (d)                                             ‡
+       1                           1
+                    Martini 3                    Martini 3
+
+
+
+
+                                                                  *
+cosθ
+
+
+
+
+       0                           0
+
+
+
+
+       −1                         −1
+
+
+
+Figure S7: Two-dimensional free energy profiles of dimerization for several aromatic com-
+pounds in water. The free energy surface is plotted on the 2D coordinate space formed by
+the distance between the COGs and cos ✓, where ✓ is the angle between the two vectors
+perpendicular to the planes of the two molecules. (a)–(b) are AA, and (c)–(d) are Mar-
+tini 3 surfaces. Molecular structures (and mappings) are shown as figure insets. (e) Same
+as Figure 7i, but showing representative snapshots for the sandwich (⇤) and T-shaped (‡)
+conformations of AA chlorobenzene.
+
+
+
+                                             S10
+10     Database: List of Molecules
+
+Table S2: Molecules in the database. The unique identifier (uID), common name, and
+SMILES string for all the molecules in the database.
+
+uID       name                                 SMILES
+
+1MIMI     1-METHYLIMIDAZOLE                    Cn1ccnc1
+2MPYR     2-METHYL-PYRIDINE                    Cc1ccccn1
+2NIMX     2-NITRO-m-XYLENE                     Cc1c(c(ccc1)C)[N+](=O)[O-]
+2NITL     2-NITROTOLUENE                       Cc1ccccc1[N+](=O)[O-]
+2T        2,2’-BITHIOPHENE                     c1cc(sc1)c2cccs2
+3HT       3-HEXYL-THIOPHENE                    CCCCCCc1ccsc1
+3PT       3-PROPYL-THIOPHENE                   CCCc1ccsc1
+4MIMI     4-METHYLIMIDAZOLE                    [nH]1cc(nc1)C
+4NIAN     4-NITROANISOLE                       COc1ccc(cc1)[N+](=O)[O-]
+ACPH      ACETOPHENONE                         CC(=O)c1ccccc1
+ANIL      ANILINE                              Nc1ccccc1
+ANTH      ANTHRACENE                           c1ccc2cc3ccccc3cc2c1
+BEAL      BENZALDEHYDE                         O=Cc1ccccc1
+BENZ      BENZENE                              c1ccccc1
+BRA       4-BROMOANISOLE                       COc1ccc(cc1)Br
+BRBZ      BROMOBENZENE                         c1ccc(cc1)Br
+BZDOL     1,3-BENZENEDIOL                      Oc1cc(ccc1)O
+BZIM      BENZIMIDAZOLE                        c1ccc2c(c1)[nH]cn2
+BZNI      BENZONITRILE                         N#Cc1ccccc1
+BZQU      para-BENZOQUINONE                    c1cc(=O)ccc1=O
+BZTA      BENZOTHIAZOLE                        n1c2ccccc2sc1
+BZTF      BENZOTRIFLUORIDE                     c1ccc(cc1)C(F)(F)F
+BZTH      BENZOTHIOPHENE                       c1c2ccccc2sc1
+
+                                      S11
+                          Table S2: (continued)
+
+uID     name                               SMILES
+
+CAFF    CAFFEINE                           Cn1cnc2n(C)c(=O)n(C)c(=O)c12
+CHEX    CYCLOHEXANE                        C1CCCCC1
+CHEXE   CYCLOHEXENE                        C1CCccC1
+CLBZ    CHLOROBENZENE                      Clc1ccccc1
+CLPR    CHLORPROPHAM                       CC(C)OC(=O)Nc1cc(ccc1)Cl
+CLTL    2-CHLOROTOLUENE                    Cc1c(cccc1)Cl
+CNAP    1-CHLORO-NAPHTHALENE               Clc2cccc1ccccc12
+CPR     CYCLOPROPANE                       C1CC1
+CUME    CUMENE                             CC(C)c1ccccc1
+CYPE    CYCLOPENTANE                       C1CCCC1
+CYPO    CYCLOPENTANONE                     C1CCC(=O)C1
+CYPOL   CYCLOPENTANOL                      C1CCC(C1)O
+DBRBZ   1,2-DIBROMOBENZENE                 c1ccc(c(c1)Br)Br
+DCLBZ   1,2-DICHLOROBENZENE                Clc1cccc(Cl)c1
+DIOX    1,4-DIOXANE                        O1CCOCC1
+DMAN    N,N-DIMETHYLANILINE                CN(C)c1ccccc1
+DMBZQ   2,5-DIMETHYL-1,4-BENZOQUINONE      Cc1cc(=O)c(cc1=O)C
+DXLA    1,3-DIOXOLANE                      O1CCOC1
+EBEN    ETHYL-BENZENE                      CCc1ccccc1
+ENAPH   1-ETHYLNAPHTHALENE                 CCc1cccc2ccccc21
+FURA    FURAN                              c1ccoc1
+IMID    IMIDAZOLE                          c1cnc[nH]1
+INDA    INDAZOLE                           c2ccc1[nH]ncc1c2
+INDO    INDOLE                             c12c(ccn2)cccc1
+IOBZ    IODOBENZENE                        c1ccc(cc1)I
+
+                                 S12
+                          Table S2: (continued)
+
+uID     name                               SMILES
+
+IOPHE   2-IODOPHENOL                       c1ccc(c(c1)O)I
+MBZOA   METHYL-BENZOATE                    COC(=O)c1ccccc1
+MCYPE   METHYLCYCLOPENTANE                 CC1CCCC1
+MESI    MESITYLENE                         Cc1cc(cc(c1)C)C
+MIND    3-METHYL-1H-INDOLE                 c1cccc2c1c(c[nH]2)C
+MINDA   1-METHYL-INDAZOLE                  Cn1c2ccccc2cn1
+MNAP    1-METHYL-NAPHTHALENE               Cc2cccc1ccccc12
+MXYLE   m-XYLENE                           Cc1cccc(c1)C
+NAPH    NAPHTHALENE                        c1ccc2ccccc2c1
+NAPY    1,5-NAPHTHYRIDINE                  c1ccc2ncccc2n1
+NBAPH   N-BOC-2-AMINOPHENOL                Oc1ccccc1NC(=O)OC(C)(C)(C)
+NDMBI   N-DMBI                             CN(C)c1ccc(cc1)C2N(C)c3ccccc3N2C
+NIBZ    NITROBENZENE                       c1ccc(cc1)[N+](=O)[O-]
+OMA     ortho-METHYLANISOLE                COc1ccccc1C
+OXYLE   o-XYLENE                           Cc1c(C)cccc1
+PBEN    PROPYL-BENZENE                     CCCc1ccccc1
+PBZOA   PROPYL-BENZOATE                    CCCOC(=O)c1ccccc1
+PCRE    para-CRESOL                        Cc1ccc(O)cc1
+PCYM    p-CYMENE                           c1cc(ccc1C(C)C)C
+PHEN    PHENOL                             c1ccc(cc1)O
+PIPER   PIPERIDINE                         C1CCNCC1
+PXYLE   p-XYLENE                           Cc1ccc(C)cc1
+PYAZ    PYRIDAZINE                         c1ccnnc1
+PYLI    PYRROLIDINE                        C1CCNC1
+PYMI    PYRIMIDINE                         c1cncnc1
+
+                                 S13
+                                  Table S2: (continued)
+
+ uID       name                                     SMILES
+
+ PYRI      PYRIDINE                                 c1ccncc1
+ PYRR      PYRROLE                                  [nH]1cccc1
+ QUIN      QUINOLINE                                n1cccc2ccccc12
+ STYR      STYRENE                                  c1ccccc1C=C
+ TCLBZ     1,2,4-TRICHLOROBENZENE                   Clc1ccc(Cl)c(Cl)c1
+ TDMBI     TEG-DMBI                                 CCOCCOCCOCCOc1ccc(cc1)· · ·
+                                                    · · · C2N(C)c3ccccc3N2C
+ TECE      TETRACENE                                c34cc2cc1ccccc1cc2cc3cccc4
+ THAZ      THIAZOLE                                 n1ccsc1
+ THF       TETRAHYDROFURAN                          C1CCOC1
+ THIO      THIOPHENE                                c1ccsc1
+ THP       TETRAHYDROPYRAN                          O1CCCCC1
+ THPH      THIOPHENOL                               Sc1ccccc1
+ THPY      THIENO[2,3-c]PYRIDINE                    c1cncc2c1ccs2
+ THT       TETRAHYDROTHIOPHENE                      S1CCCC1
+ TOLU      TOLUENE                                  Cc1ccccc1
+ XBZ       METHOXYBENZENE                           COc1ccccc1
+ XNAPH     1-METHOXYNAPHTHALENE                     COc1cccc2ccccc21
+
+
+
+
+References
+
+(S1) Rowland, R. S.; Taylor, R. J. Phys. Chem. 1996, 100, 7384–7391.
+
+(S2) Campbell, A.; Kartzmark, E. M.; Chatterjee, R. Can. J. Chem. 1966, 44, 1183–1189.
+
+(S3) Zhang, S.; Ye, L.; Zhang, H.; Hou, J. Mater. Today 2016, 19, 533–543.
+
+                                          S14
+

@@ -1,0 +1,192 @@
+# Martini harness (LangChain + LangGraph)
+
+Builds a Martini 3 coarse-grained GROMACS model of **one molecule** from its SMILES, without Claude Code or Codex. LangGraph decides which step runs next, and LangChain agents on OpenRouter make the chemical decisions (mapping, bead types). Every deterministic calculation and check is done by `martini_harness.core`, Python code copied from the `build-martini-agent` skill (v16.2) on 2026-11-18 and maintained here. The harness is one self-contained package: it does not use the skill at run time and is not synced with it.
+
+A file-by-file explanation of the code is in [`martini_harness/README.md`](martini_harness/README.md). [`docs/flow_of_information_CHXO.pdf`](docs/flow_of_information_CHXO.pdf) follows one CHXO run through the code step by step (with file and line numbers), describes the LangGraph nodes, state and routing, the offline index build and every Python file, and has a debugging guide; rebuild it with `python docs/build_flow_pdf.py` after code changes. The current plan and its status are in [`docs/plan_evidence_records.md`](docs/plan_evidence_records.md).
+
+## Status (2026-11-21)
+
+- **Typing is settled by the harness.** Before typing, the pipeline selects for each bead its rung-1 precedents and the matching rows of Souza SI Table 24/25 and Alessandri 2022 Table 1, with citations (`design evidence`). Typing agents make no document reads and take about 4 model calls (8.4 before, CHXO).
+- **Mapping is proposed by the harness.** The pipeline projects bead memberships of the most similar reference models onto the molecule and ranks the candidate partitions: complete and within the mapping rules first, then every bead with an exact precedent, then the **SASA band** (computed up front on the stage-4 ensemble, with each bead's size from its exact precedents; it reproduced the final SASA of earlier runs exactly), then the closest analogue (`design propose`). The research step records the best one; the mapping agent confirms or overrides it. `design_candidate` refuses lone-atom beads, oversized beads and divided chemical groups.
+- **Results** (live runs, `runs/compare-2026112*/REPORT.md`): PHAC and PIPL give one byte-identical model in every run with Haiku 5.5 and GPT-6 Luna, equal to the recorded designs. CHXO gives one of two defensible models (both ranked by the harness; the agent picks): the remaining source of variation. Cost about 2 ¢ per molecule; Luna takes about twice the model calls of Haiku at similar cost.
+- **Research without an agent** (`--research pipeline`): one Haiku run per molecule gave the same models as the research-agent runs, byte for byte, with 6–8 model calls instead of 12–14 and about 1.4 ¢ instead of 2.2 ¢ (`runs/compare-20261121-research/REPORT.md`). `pipeline` is the default since 2026-11-21.
+- **The pipeline chooses, the agent confirms** (default): one Haiku run per molecule: every mapping agent confirmed in 1 model call; 4–5 model calls and about 0.9 ¢ per molecule (2.2 ¢ with all agents), same models as before (`runs/compare-20261121-confirm/REPORT.md`).
+- **Open (partly superseded):** let the harness record the top projected partition when it is all-exact (agent confirms or overrides with a reason); refuse `design_hydrogens` that excludes every heavy atom's hydrogens; provenance file (step 2 of the plan); whether the research node is still needed (step 3).
+
+## How it works
+
+```
+START → preflight → intake → research → mapping → mapping_gate → typing → typing_gate
+      → bonded_build → test → finalize → report → END
+```
+
+| Node | Kind | What it does |
+| --- | --- | --- |
+| `preflight` | code | Checks that the supplied AA topology exists |
+| `intake` | code | Prepares the molecule with `cgbuild.cmd_input` and runs the initial model-catalog search through `design.cmd_init` |
+| `research` | code (default) or agent | `research: pipeline` (default since 2026-11-21): `design research` works without a model: it opens the sources of the projected partitions, the rung-1 sources of their beads and the closest other hits, annotates each with the reason, passes their bead views on, and **records the best-ranked partitions (at most two) and chooses the first**; the mapping agent then confirms or overrides that choice with a reason. `research: agent` (config key or `cli run --research agent`): an agent reviews ranked hits, opens, matches and annotates references and returns an evidence summary |
+| `mapping` | agent | Confirms or overrides the partition the research step chose (an override needs a reason of at least 40 characters), or, with `research: agent`, records and chooses candidates. Sees the projected partitions with their SASA (`design propose`); `candidate` refuses partitions that break the mapping rules |
+| `mapping_gate` | code | Is a candidate chosen? If not, mapping runs again (up to `gate_retries`) |
+| `typing` | agent | `bead` for every bead of the chosen candidate, `note`, `check`. Its task message carries, per bead, the rung-1 precedents and matching Souza SI Table 24/25 and Alessandri Table 1 rows with citations (`design evidence`) |
+| `typing_gate` | code | `design.cmd_check`; if incomplete, typing runs again with its output |
+| `bonded_build` | code | `cgbuild` stages `bonded` and `build`; reads `static_checks.json` |
+| `test` | code | `cgbuild` stage `test` (GROMACS); reads `execution.json` |
+| `repair` | agent | After a failed static check or test (at most `max_repair_cycles`): changes mapping, sites or beads, then back to `typing_gate` |
+| `finalize` | code | `cgbuild` stage `finalize`, `multi_seed_check.check`, `sasa_check.check` |
+| `report` | model | Final message from the run's records only |
+
+The core functions are called directly in the harness process (`runner.call`), not as scripts. What they print becomes the tool result; a refused decision becomes an `[exit N]` message the agent reads and corrects.
+
+The method's rules are enforced by how the harness is built:
+- Agents have no shell and no write tool. `design.json` changes only through the `design_*` tools, which call `core/design.py`, so its checks and its log apply.
+- Each agent node gets only the tools of its step (research cannot record candidates or beads, mapping cannot record beads, typing cannot record candidates).
+- Tools are bound to one molecule folder.
+- Reference tools only read inside the environment's `generation_reference_paths`.
+- Each agent node has a model-call limit; repairs are counted in the graph state.
+
+## Layout
+
+```
+config/harness.json   models per node, limits, paths (free OpenRouter models)
+config/haiku.json     the same with anthropic/claude-haiku-5.5 and no fallbacks
+config/luna.json      the same with openai/gpt-6-luna
+environment.json     reference paths and local executable names
+references/          source documents and models; index/ holds the prepared indexes and src/ their curated inputs
+martini_harness/
+  core/        the science: cgbuild.py, design.py, partition.py (mapping help), refbeads.py, derive_bonded.py, d5bonded/, multi_seed_check.py,
+               sasa_check.py
+  build_index.py  offline preparation of references/index/*.jsonl from references/index/src/ and the Bible workbook
+  prompts/     agent prompts: harness.md, rules.md, stages/*.md (the method, from SKILL.md v16.2), tasks/<node>.md
+  system_prompts.py  puts a node's prompt together from prompts/
+  runner.py    calls core functions from the graph and design tools, captures output, and logs results
+  tools/       design_tools.py (one tool per design command), reference_tools.py, common.py (output paging)
+  config.py, models.py, nodes.py, graph.py, trace.py, cli.py
+tests/         test_calls.py (how calls report errors), test_index.py (prepared indexes), test_partition.py (mapping help),
+               test_golden.py + golden/ (replays against saved outputs)
+docs/          flow_of_information_CHXO.pdf and its builder, plan_evidence_records.md (plan and status)
+runs/          one folder per run
+```
+
+## Setup
+
+- Python: the `chem` conda environment (langchain 1.5, langgraph 1.2, langchain-openrouter 0.2.9, RDKit, NumPy, SciPy). Everything runs in that one interpreter; `manifest.json` records it (`software.python`) and uses it in its `reproduce` command.
+- The bundled `environment.json` resolves references relative to its own directory. It uses `gmx` on `PATH` by default. Set `gromacs_command` there if your installation uses a different command or path.
+- API key: `OPENROUTER_API_KEY` in the environment, or a line `OPENROUTER_API_KEY=...` in `customized_harness/.env`. Keep `.env` out of version control. If the key is exported in `~/.bashrc`, a non-interactive shell may not load it; use `bash -ic '...'` or `.env`.
+
+## Running
+
+From `customized_harness/`, with the `chem` interpreter:
+
+```bash
+PY=python   # after `conda activate chem`; in a non-interactive shell use the full path, e.g. ~/miniforge3/envs/chem/bin/python
+FX=tests/golden/fixtures/CHXO
+
+# Full run with Haiku 5.5 (about 70 s and 2 cents for CHXO)
+# research runs as a deterministic step by default; add --research agent to use an LLM agent for it
+$PY -m martini_harness.cli run --config config/haiku.json --label haiku55 \
+    --id CHXO --name cyclohexanone --smiles 'O=C1CCCCC1' --aa-topology $FX/aa_topology.top
+
+# Replay a recorded design through the graph (no LLM, no API cost): tests tools, gates and every stage
+$PY -m martini_harness.cli replay --id CHXO --name cyclohexanone --smiles 'O=C1CCCCC1' \
+    --aa-topology $FX/aa_topology.top --log $FX/design_log.jsonl --compare $FX/recorded_design.json
+
+# The graph as Mermaid
+$PY -m martini_harness.cli graph
+
+# Tests (about 40 s, no LLM)
+$PY -m pytest tests -q
+```
+
+The CLI exits 0 even when the run ends `blocked` or a node fails; read the status line and `harness/events.log`.
+
+## References and distribution
+
+Distribute `martini_harness/`, `config/`, `environment.json`, and `references/` together. The bundled reference tree includes the source topologies and mappings, simulation inputs, and documents available to the reference tools. It omits duplicate archives, tutorial trajectories, duplicate copies of the core force-field ITP, and the site-specific readiness record. Saved `runs/` are local outputs.
+
+The prepared indexes in `references/index/` are what runs read. The three example files share one schema: one
+record per reference model with its SMILES, source locator and beads (type, charge, fragment signature, member
+atoms as 1-based heavy-atom positions in the record's SMILES). `mapping_support` says what a record supports:
+`atom_membership` (a mapping precedent and a rung-1 source), `fragment_signature` (rung-1 only),
+`bead_types_only` or `none` (with `diagnostics`).
+
+| File | Content and use |
+| --- | --- |
+| [models.jsonl](references/index/models.jsonl) | 176 Martini 3 small-molecule models (`SM3:...`, memberships from their `.ndx` mapping files) and the polyply PEO building blocks (types only) |
+| [ff300.jsonl](references/index/ff300.jsonl) | 74 molecules of the Martini 3.0.0 force-field files (`FF300:...`): types and charges from the ITPs; memberships from single beads, a unique Bible CGSmiles placement, or a curated mapping (the six ionic-liquid cations, from Souza SI Figure 16) |
+| [bible.jsonl](references/index/bible.jsonl) | 334 Martini Bible rows (`BIBLE:rowN`): beads from CGSmiles; memberships when the fragments fit the molecule in one way up to symmetry |
+| [method_evidence.jsonl](references/index/method_evidence.jsonl) | 130 method records (`MEV:...`): Souza SI section C rules, Table 24/25 rows and Alessandri 2022 Table 1 building blocks (49 rows, with bead size and an example model) with SMARTS for automatic selection, Tables 17-19 as values; each with the exact source lines and locator |
+| [build_report.json](references/index/build_report.json) | Counts per file and support, and every diagnostic of the build |
+| [sections.json](references/index/sections.json) | A locator for document sections, tables, and figures |
+
+`design_init`/`design_query` search all three example files; `design_match` and `design_bead` look up bead
+signatures across them; `design_open` shows a record (or an `MEV:` record with its text); `design_evidence` selects
+the precedents and Table 24/25 rows for each bead. The harness trusts the supplied references. Preflight checks the
+supplied all-atom topology path, and finalization records the hashes of the index files and principal simulation
+inputs in `manifest.json`.
+
+### Rebuild the indexes
+
+Curated inputs are in `references/index/src/`: `models_catalog.jsonl` (SM3, PEO), `ff300_catalog.jsonl`,
+`ff300_curated.jsonl` (hand mappings with their sources) and `method_evidence.jsonl` (IDs, locating phrases,
+statements, SMARTS). The Bible workbook is read directly. After changing any of them, rebuild from the project
+root (needs `openpyxl`; about 2 s). The output is deterministic, and the builder fails if a method-evidence
+phrase is no longer found in its source.
+
+```bash
+python -m martini_harness.build_index            # writes references/index/*.jsonl and build_report.json
+python -m martini_harness.build_index --out DIR  # writes elsewhere, for comparison
+```
+
+## Tests
+
+- `tests/test_calls.py`: checks command and tool behavior, including parallel writes and Bible identity and bead lookups with `openpyxl` disabled.
+- `tests/test_partition.py`: the projections find the partitions of the recorded CHXO, PHAC and PIPL designs without an agent; `design_candidate` refuses a divided ester and a lone-atom bead, and accepts an exception only when it names a reference.
+- `tests/test_index.py`: the prepared indexes rebuild byte-identically; memberships reproduce their signatures and cover every heavy atom; FF300 types come from the ITPs; method excerpts are the cited lines; the CHXO typing evidence selects the Table 24 ketone row.
+- `tests/test_golden.py`: replays the recorded CHXO, PHAC and PIPL designs and compares the results with `tests/golden/expected/` (decisions, bonded terms, files and SASA exactly; GROMACS checks as pass/fail). Rewrite the expected files with `tests/golden/make_golden.py` only when a change of outputs is intended.
+
+Replays issue one command at a time, so they do not cover what only a live model does (parallel tool calls, unverified notes, retries). Run at least one live run after changing `runner.py`, `tools/` or `core/`.
+
+## What a run leaves
+
+`runs/<label>-<UTC>/<ID>/` is the usual molecule folder (`input/`, `decisions/`, `bonded/`, `model/`, `test/`, `report.md`, `validation.json` and so on), plus `harness/`:
+
+| File | Content |
+| --- | --- |
+| `run.json` | Configuration, models, limits, timing, final status (and the replay comparison) |
+| `events.log` | One line per node |
+| `state/NN_node.json` | The state update each node returned, in order |
+| `trace.jsonl` | Every model call (which model answered, tokens, tool calls) and every tool call and result |
+| `transcripts/NN_node.json` | Full message list of each agent node |
+| `commands.jsonl` | Every core call, with exit code and output tails |
+| `graph.mmd` | The compiled graph |
+| `final_message.md` | The report node's message |
+
+`decisions/design_log.jsonl` records the agent's decisions. `manifest.json` records the harness version, a hash of its code and prompts, and the hashes of the configured input files used for provenance.
+
+## Models
+
+`models.default` sets every node's model; `models.<node>` overrides one node, and `models.fallbacks` are tried in order when a call fails.
+- `config/harness.json` uses free OpenRouter models (`nvidia/nemotron-3-ultra-550b-a55b:free`, then `nvidia/nemotron-3.5-lightning:free` and `google/gemma-4-31b-it:free`). Free models have per-minute and per-day limits and change often; Gemma returned 429 on 2026-11-19. `openrouter/free` is not used, because it picks a different model per call.
+- `config/haiku.json` uses `anthropic/claude-haiku-5.5` ($0.10 / $0.50 per million input / output tokens on 2026-11-19) and 60 requests per minute.
+- `config/luna.json` uses `openai/gpt-6-luna` (same price on 2026-11-21). On the same harness it produced the same models as Haiku with about twice the model calls (`runs/compare-20261121-luna/REPORT.md`).
+
+Calls use `request_timeout_s` (300 s), `reasoning_effort: low`, `temperature: 0`. Temperature 0 does not make runs repeat: two Haiku runs of CHXO chose different partitions.
+
+## Limits of this version
+
+- One molecule per command; no batch runner yet.
+- The indexes are prepared offline (`build_index.py`); runs only read them. Compare mode is outside this package.
+- No figure rendering: `pdf_page_text` gives text only.
+- Checkpoints are in memory (`InMemorySaver`), so a crashed run can't be resumed; the `state/` snapshots show each step.
+
+## History
+
+- 2026-11-16/17, v0.1: vendored copy of the skill, run as scripts in child processes, prompts cut from SKILL.md.
+- 2026-11-18, v0.2: the skill's scripts became `martini_harness/core/` and are called in-process; prompts moved to `martini_harness/prompts/`; provenance is the package version and source tree hash; golden replay tests added.
+- 2026-11-20: first complete LLM run (Haiku 5.5, CHXO, `runs/haiku55-20261120T034634Z`). Three bugs fixed on the way: the model timeout was passed in seconds where `ChatOpenRouter` expects milliseconds (every earlier "timeout" was 0.3 s); parallel tool calls corrupted `design.json` (core calls are now serialised); `finalize` crashed on an unverified note (`report.md` read the wrong keys).
+- 2026-11-21, v0.3: self-contained distribution. `environment.json` and `references/` (original sources, derived files, `index/`) ship with the package and resolve relative to the project; the Bible is read from the prepared `references/index/bible.jsonl` (offline builder `build_bible_index.py`), so runs no longer need `openpyxl`; reference-lock verification was retired (preflight checks only the AA topology; `manifest.json` hashes the two indexes and the main simulation inputs); `python_command` was dropped from `environment.json`, and the manifest's `reproduce` command uses the interpreter that ran.
+- 2026-11-21, step 1 of `docs/plan_evidence_records.md`: one schema for the reference examples (`models.jsonl`, new `ff300.jsonl`, `bible.jsonl`) with atom memberships kept where the source determines them, prepared `method_evidence.jsonl`, one builder (`build_index.py`, replaces `build_bible_index.py`); runs read prepared bead views (no per-molecule `reference_beads.json`); the typing and repair tasks carry per-bead evidence (`design evidence`); GROMACS manual removed; reference-text line numbers now follow `grep -n` (form feeds no longer count as line breaks).
+- 2026-11-21, mapping help: `design propose` (core/partition.py) projects reference beads onto the target bead by bead and assembles ranked candidate partitions for the mapping task; `design_candidate` checks lone-atom, oversized and group-dividing beads at proposal time; beads are kept in the chosen candidate's order, so identical models write identical files.
+- 2026-11-21, comparisons: `runs/compare-20261121` (prepared evidence: typing calls 8.4 → 3.7, no document reads), `runs/compare-20261121-mapping` and `-exact` (mapping help; PHAC and PIPL converge to one model), `runs/compare-20261121-luna` (GPT-6 Luna: same models). `docs/flow_of_information_CHXO.pdf` rebuilt for the current code, with the LangGraph design, every Python file and a debugging guide.
+- 2026-11-21, research without an agent: `design research` and the `research: agent | pipeline` switch (config key, `cli run --research`).
+- 2026-11-21, up-front SASA: `sasa_check.partition_sasa` scores every candidate partition before typing (ensemble cached in `research/`); ranking exact precedents → SASA → closest analogue; the research step records and chooses the best partition, the mapping agent confirms or overrides (user decisions).

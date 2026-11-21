@@ -1,0 +1,6 @@
+.env
+__pycache__/
+runs/
+test.py
+tests/
+references/original

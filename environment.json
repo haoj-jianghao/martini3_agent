@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "indexes": {
+    "models": "references/index/models.jsonl",
+    "ff300": "references/index/ff300.jsonl",
+    "bible": "references/index/bible.jsonl",
+    "method_evidence": "references/index/method_evidence.jsonl"
+  },
+  "runs_root": "runs",
+  "force_field": {
+    "version": "Martini 3.0.0",
+    "core_itp": "references/original/forcefield/martini_v300/martini_v3.0.0.itp",
+    "solvent_itp": "references/original/forcefield/martini_v300/martini_v3.0.0_solvents_v1.itp",
+    "ions_itp": "references/original/forcefield/martini_v300/martini_v3.0.0_ions_v1.itp",
+    "solvent_coordinates": "references/original/tutorial/parametrize_new_small_molecule/ENAP-in-water/6_CG-takeCURRENT/box_CG_W_eq.gro",
+    "production_mdp": "references/derived/mdp/martini_v3.0_prod_single-solute_gmx2026.3.mdp"
+  },
+  "generation_reference_paths": [
+    "references/original/papers",
+    "references/original/bible",
+    "references/original/small-molecules",
+    "references/original/polymers-m3",
+    "references/original/tutorial",
+    "references/derived"
+  ],
+  "gromacs_command": [
+    "gmx"
+  ],
+  "default_temperature_K": 298.15,
+  "default_pressure_bar": 1.0,
+  "random_seed": 20261031,
+  "max_conformers": 10,
+  "max_mapping_candidates": 3,
+  "max_repair_cycles": 3,
+  "smoke_test_duration_ps": 100,
+  "target_test_timestep_ps": 0.02,
+  "allow_aa_md_or_qm": false,
+  "allow_automatic_cg_generators": false,
+  "benchmark_mode": "off",
+  "benchmark_root": null,
+  "opls_ff_gen_command": [
+    "conda",
+    "run",
+    "--no-capture-output",
+    "-n",
+    "openMM",
+    "opls-ff-gen"
+  ],
+  "bonded": {
+    "method": "d5_opls_obc2_numpy",
+    "n_conformers": 300,
+    "n_samples_per_minimum": 200,
+    "hess_e_window_kcal_mol": 8.0
+  }
+}

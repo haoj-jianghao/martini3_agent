@@ -1,0 +1,33 @@
+{
+  "martini_env": "environment.json",
+  "runs_root": "runs",
+  "models": {
+    "default": "openai/gpt-6-luna",
+    "fallbacks": [],
+    "research": null,
+    "mapping": null,
+    "typing": null,
+    "repair": null,
+    "report": null
+  },
+  "temperature": 0.0,
+  "max_tokens": 4096,
+  "request_timeout_s": 300,
+  "reasoning_effort": "low",
+  "model_retries": 4,
+  "requests_per_minute": 60,
+  "limits": {
+    "research_model_calls": 30,
+    "mapping_model_calls": 25,
+    "typing_model_calls": 30,
+    "repair_model_calls": 20,
+    "gate_retries": 2
+  },
+  "tool_output_chars": 6000,
+  "research": "pipeline",
+  "research_task_hits": 15,
+  "gmx_threads": 4,
+  "run_multi_seed": true,
+  "run_sasa": true,
+  "run_report_agent": true
+}

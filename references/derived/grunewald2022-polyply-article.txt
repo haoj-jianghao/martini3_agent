@@ -1,0 +1,727 @@
+                  ARTICLE
+                  https://doi.org/10.1038/s41467-021-27627-4                 OPEN
+
+                  Polyply; a python suite for facilitating simulations
+                  of macromolecules and nanomaterials
+                  Fabian Grünewald             1, Riccardo Alessandri            1,2, Peter C. Kroon          1, Luca Monticelli           3, Paulo C. T. Souza     3&
+
+                  Siewert J. Marrink           1✉
+1234567890():,;
+
+
+
+
+                  Molecular dynamics simulations play an increasingly important role in the rational design of
+                  (nano)-materials and in the study of biomacromolecules. However, generating input ﬁles and
+                  realistic starting coordinates for these simulations is a major bottleneck, especially for high
+                  throughput protocols and for complex multi-component systems. To eliminate this bottle-
+                  neck, we present the polyply software suite that provides 1) a multi-scale graph matching
+                  algorithm designed to generate parameters quickly and for arbitrarily complex polymeric
+                  topologies, and 2) a generic multi-scale random walk protocol capable of setting up complex
+                  systems efﬁciently and independent of the target force-ﬁeld or model resolution. We
+                  benchmark quality and performance of the approach by creating realistic coordinates for
+                  polymer melt simulations, single-stranded as well as circular single-stranded DNA. We fur-
+                  ther demonstrate the power of our approach by setting up a microphase-separated block
+                  copolymer system, and by generating a liquid-liquid phase separated system inside a lipid
+                  vesicle.
+
+
+
+
+                  1 Groningen Biomolecular Sciences and Biotechnology Institute and Zernike Institute for Advanced Materials, University of Groningen, Groningen, The
+
+                  Netherlands. 2 Pritzker School of Molecular Engineering, University of Chicago, Chicago, IL 60637, USA. 3 Molecular Microbiology and Structural
+                  Biochemistry, UMR 5086 CNRS and University of Lyon, Lyon, France. ✉email: s.j.marrink@rug.nl
+
+                  NATURE COMMUNICATIONS | (2022)13:68 | https://doi.org/10.1038/s41467-021-27627-4 | www.nature.com/naturecommunications                                1
+ARTICLE                                                                  NATURE COMMUNICATIONS | https://doi.org/10.1038/s41467-021-27627-4
+
+
+
+
+M
+           olecular dynamics (MD) simulations of (bio-)macro-                 integral part of enhancement strategies36. (4) It needs to be
+           molecules have become a powerful tool for researchers              capable of setting up complex systems without the need for
+           to complement experimental assays. Whereas simula-                 extensive relaxation. Polymer melts, blends with nano-particles,
+tions of single polymer melts or mixtures have been used since the            and phase-separated systems are highly important in material
+advent of modern MD1,2, recently the trend goes towards studying              science, and when studying bio-synthetic hybrid molecules, and
+more complex multicomponent systems either of purely synthetic                closely capturing their heterogeneity in the starting structures
+materials or biologically synthetic hybrid macromolecules3–9.                 saves valuable computer resources. (5) Generation of both the
+Examples of such systems range from polyelectrolyte complex                   coordinate and parameter ﬁles needs to be fast enough to enable
+coacervates10 to next-generation polymer batteries11,12. Whereas              HT research.
+simulations of these complex systems are typically focused on                    Here, we present the open-source polyply software suite
+studying the self-assembly or understanding structure–function                which addresses the ﬁve major challenges presented above. It
+relationships, much effort is now being directed towards developing           facilitates the generation of input parameters and coordinates for
+MD-based protocols for virtual high throughput (HT) screening of              MD simulations of (bio-)macromolecules and nanomaterials.
+polymers as exempliﬁed by the material genome initiative13–16. HT             Using a graph-based algorithm, polyply allows users to generate
+screening of polymers by MD is expected to complement experi-                 parameter ﬁles of arbitrarily composed and branched polymers
+mental HT approaches because it is typically less costly than syn-            for any force-ﬁeld from simple library ﬁles and the residue
+thetic exploration and gives access to properties not easily accessible       graph. A residue graph contains the sequence of residues of the
+by purely experimental HT approaches. Such combined approaches                polymer, but in addition, it also records which residues are
+will enable researchers to survey a larger combinatorial space and            connected. Using a multiscale random walk, polyply can also
+ﬁlter possible candidates more efﬁciently14,16. Applications of such          be utilized to generate starting coordinates for any force ﬁeld
+procedures range from the design of novel antimicrobial polymers to           and at any target resolution. This includes complex arrange-
+biodegradable polymers14.                                                     ments like microphase-separated polymeric systems or multi-
+   Though the avenue of HT simulations is promising, it requires              component polymer solutions enclosed in lipid vesicles. To
+programs to build topologies and simulation boxes in a quick,                 maximize the accessibility of the models and code, polyply is
+reliable, and consistent manner. Moreover, given the hierarchy of             distributed via the python package index. Furthermore, polyply
+spatiotemporal scales underlying the behavior of polymer-based                is developed using modern software development practices (such
+systems, models with both all-atom and coarse-grained (CG)                    as code review, continuous integration testing, and semantic
+resolution are required. While a wide range of programs17–26 is               versioning) as outlined in the recent whitepaper by the BioExcel
+available for MD simulations of biologically relevant systems such            consortium37. These practices ensure both the integrity of the
+as proteins, lipid membranes, and DNA, the support for simulation             code and the library data ﬁles.
+of synthetic and biosynthetic hybrid macromolecules is largely                   The remainder of this paper is organized as follows. First, we
+lacking. To our knowledge, there are no programs that can generate            present the algorithms behind the input parameter generation
+both input parameters and coordinates for arbitrarily complex                 and the coordinate generation. Subsequently, we show the cap-
+polymeric systems independent of the force-ﬁeld and compatible                abilities of our program based on three examples from pure
+with HT approaches. Depending on the molecule or system there                 materials science to bio-molecular science, some at the atomistic
+are a number of speciﬁc solutions20,27–30. Some of those are in               level based on the Amber38,39 and GROMOS40 force ﬁelds, others
+principle capable of generating parameters and coordinates29,30.              at the CG level using the Martini41,42 force-ﬁeld. They exemplify
+However, available programs typically support only one force ﬁeld             the capabilities of polyply to be compatible with HT approaches,
+and are limited to speciﬁc (mostly linear) polymers implemented               generate parameters force-ﬁeld independently and set up complex
+by the developers. Website implementations28,30 have the added                systems. Finally, we discuss the limitations of our approach and
+problem that performance relies on server-load and it involves                sketch possible future directions for its further development.
+human-time having to interface with the website. In addition,
+coordinates for more complex systems such as micro phase-
+                                                                              Results
+separated polymers and hybrid nanoparticle blends are frequently
+                                                                              The general code design accounts for the fact that generation of
+generated by (multi-scale) self-assembly31–33 or custom in-house
+                                                                              input parameter ﬁles and coordinate generation are in principle
+building scripts34,35.
+                                                                              separate problems. However, both problems can make use of the
+   The general lack of programs supporting all-atom and CG
+                                                                              same infrastructure, which is centered around exploiting graph
+polymer simulations limits the use of MD simulations for both
+                                                                              representations of molecules. Thus, the polyply software suite
+large versatile systems and HT research of (bio-) macromolecular
+                                                                              consists of separate lone-standing programs, which utilize the
+systems. This is especially true for non-experts in the ﬁeld. To this
+                                                                              same libraries. At the moment two programs, “gen_params” and
+end, we identify ﬁve major challenges that need to be overcome.
+                                                                              “gen_coords”, are available for input parameter generation and
+(1) The program needs to be able to generate both coordinates
+                                                                              coordinate generation, respectively. In addition, an auxiliary
+and parameters, resolution and force-ﬁeld independent. Accurate
+                                                                              program for sequence generation is provided, which is further
+CG models are often based on atomistic polymers, thus modeling
+                                                                              discussed in the Supplementary Information. In the following two
+both of those is an integral part of HT model development. In
+                                                                              sections we explain the algorithm and ideas behind parameter ﬁle
+addition, the program needs to be force-ﬁeld agnostic, as some
+                                                                              generation and system coordinate generation.
+force-ﬁelds work better for speciﬁc polymers than others. (2)
+There needs to be an easy-to-use pipeline for generating input
+ﬁles and coordinates based on the system composition. Input ﬁles              Parameter ﬁle generation. The problem of generating parameter
+should be generated from sequences of arbitrarily complex                     ﬁles is treated as a graph transformation within polyply. Graph
+polymers, including different degrees of branching and statistical            transformations are commonly used in other tools for generation
+distribution of residues along the chain. (3) The program needs to            input parameters as well19,29. The graph transformation in
+be able to combine input parameters and coordinates of poly-                  polyply takes a residue graph and maps it into a higher resolution
+meric systems with a variety of biomolecular structures, like                 graph, which is agnostic to the target resolution. A graph consists
+proteins, lipid bilayers, and nucleotides. For example, manipula-             of nodes and edges. Edges describe which nodes are connected
+tion of proteins and other biomolecules by polymer grafting is an             and nodes can have attributes that store speciﬁc information. In
+
+2                 NATURE COMMUNICATIONS | (2022)13:68 | https://doi.org/10.1038/s41467-021-27627-4 | www.nature.com/naturecommunications
+NATURE COMMUNICATIONS | https://doi.org/10.1038/s41467-021-27627-4                                                                       ARTICLE
+
+
+
+
+Fig. 1 Schematic illustration of the workﬂow for parameter ﬁle generation. Polyethylene oxide (PEO) grafted methyl acrylate (MA) is used as an
+illustrative example. The user input is the residue graph, while the building blocks are taken from the library (presented in dashed boxes). However, users
+can modify the library as they need. In step one, the parameters for the blocks are applied based on the residue graph to form a disconnected graph at the
+target resolution. In step two the links are matched at residue graph level to the input residue graph. Subsequently, links are applied to the disconnected
+graph at target resolution in the third step producing the complete parameter ﬁle.
+
+this context a graph representation of a molecule translates the                attributes. Performing this on the residue graph drastically
+connectivity of bonds to the edges of the graph. Molecular                      reduces the problem size compared to solving the subgraph
+characteristics of the atoms (e.g., their name or residue name) are             isomorphism problem at the target resolution. This establishes at
+stored as node attributes. Before we detail the algorithm, it is                residue level which links apply between which residues.
+handy to deﬁne a few more terms: We deﬁne a block to be a                          Step 3: Matching generic links to speciﬁc residues
+graph, which corresponds to all interactions and atoms of a single                 Taking the matches between links and residues, the program
+residue; Complementarily, a link describes the interactions (e.g.,              establishes a correspondence between the atoms of the link and
+bonds or angles) introduced when two residues are connected. To                 the atoms in the disconnected graph at the target resolution. To
+this end, polyply internally uses the Networkx43 and vermouth44                 do so the atom names and relative residue indices given in the
+python libraries for handling graph-related computations.                       link are simply matched to the atoms of the residues in the
+   The general input to polyply for parameter ﬁle generation is a               disconnected graph generated in step 1. However, this matching
+residue graph of the target molecule. In addition, the blocks and               step is not limited to the atom name and residue index. It can also
+links corresponding to the residues in the target molecule are                  be extended to take other atom characteristics into account. This
+needed (cf. Fig. 1, dashed boxes). Currently, polyply is shipped                allows accounting for information that is not encoded in the
+with libraries containing these parameters for some force ﬁelds                 connectivity of the residue graph, such as chirality or anomers of
+and polymers, a database that will be expanded over time. From                  the same residue. When a link is added, also the edges of the link
+the deﬁnition of the residue graph, blocks, and links, polyply                  are added to the disconnected residue graph. In this way, the
+generates a parameter ﬁle in three steps (cf. Fig. 1):                          disconnected graph gradually becomes a connected graph at the
+   Step 1: Generate a disconnected graph of residues                            target resolution level. This completes the graph transformation
+   After reading the input ﬁles, polyply iterate over all residues of           and the molecule including all interactions only needs to be
+the input residue graph. For each residue, the matching block is                written to a ﬁle.
+added to an empty graph thereby generating a disconnected
+graph of residues at the target resolution. This graph already
+contains all atoms of the target molecule and interactions within               System building. Starting coordinates for systems are built using
+the residues. Thus, the problem to assign the proper interactions               a generic multiscale approach, in which ﬁrst a super CG resolu-
+linking the two or more residues remains.                                       tion representation of the system is generated, followed by a back
+   Step 2: Find all links at the residue level                                  transformation to the target level. This multiscale approach is
+   To generate all interactions spanning more than one residue,                 similar to the procedure underlying the Charmm-GUI polymer
+links are applied between two or more residues. To solve this in a              builder30, but our approach is generic meaning parameters of
+general manner we treat it as a subgraph isomorphism problem at                 the super CG model are derived on the ﬂy based on the target
+residue graph level: we ﬁnd all the ways a link can ﬁt onto the                 force-ﬁeld, employs a self-excluding random-walk in contrast to a
+residue graph subject to constraints such as matching node                      full-scale dynamics simulation, and uses an automated back
+
+NATURE COMMUNICATIONS | (2022)13:68 | https://doi.org/10.1038/s41467-021-27627-4 | www.nature.com/naturecommunications                                   3
+ARTICLE                                                                  NATURE COMMUNICATIONS | https://doi.org/10.1038/s41467-021-27627-4
+
+
+                                                                              of the model (LJ well depth) is always set to 1 kJ/mol. Since we do
+                                                                              not perform dynamics the attractive part of the potential is less
+                                                                              important. The sigma parameter, however, determines the overall
+                                                                              packing density and is computed from the residue template
+                                                                              coordinates, reﬂecting the volume of the residue. It is derived
+                                                                              from the radius of gyration as detailed in the Supplementary
+                                                                              Information. In general, the radius of gyration is often used in
+                                                                              polymer physics to estimate the spherical volume occupied by a
+                                                                              single chain. Here, we port this concept to the molecular
+                                                                              geometry of a single residue. However, in addition to the
+                                                                              geometry of the residue, we also account for the fact that the
+                                                                              single atoms have a certain volume. Although it is an
+                                                                              approximate radius and probably not useful in an actual
+                                                                              simulation, we ﬁnd it to be good enough in the context of the
+                                                                              random walk.
+                                                                                 Step 4: Constrained random walk
+                                                                                 To generate coordinates for the one bead per residue molecules
+                                                                              in our target system, we perform a self-excluding random walk.
+                                                                              An attempt to place a bead (step) in the random walk is rejected,
+                                                                              if a maximum force on the placed bead is exceeded. The self-
+                                                                              excluding random walk is by default performed along a breadth-
+                                                                              ﬁrst traversal of the molecular graph. This means nodes (i.e.,
+                                                                              residues) that are close to each other are placed ﬁrst and then the
+                                                                              algorithm proceeds further along the chain. Molecules are placed
+                                                                              separately after each other, where the starting point is randomly
+                                                                              chosen from a grid.
+                                                                                 This grid can either be user-speciﬁed or is considered to be
+                                                                              rectangular across the box. When the random-walk algorithm
+                                                                              exceeds a certain number of steps, it goes backward in the
+                                                                              breadth-ﬁrst path by default by ten residues and tries to replace
+                                                                              these ten residues. In addition to the force-acceptance criterion,
+Fig. 2 Principle of the multiscale algorithm for building systems. The
+                                                                              the random-walk can also be supplemented with three additional
+algorithm works in ﬁve steps: ﬁrst residues are identiﬁed, followed by
+                                                                              conditions which help steer overall conformations: (1) geome-
+generating coordinates for the residues through two-step graph embedding.
+                                                                              trical constraints can be set to deﬁne regions of space that are
+Based on the residue volumes the generic CG model is generated, which is
+                                                                              excluded from sampling; (2) dimension constraints can be
+then used in a self-excluding random-walk. Finally using the template
+                                                                              speciﬁed to limit the random walk dimension along speciﬁc
+residue coordinates the CG model is back mapped to the target
+                                                                              vectors to for example create brushes on surfaces; (3) distance
+coordinates.
+                                                                              restraints can be set to deﬁne target distances between speciﬁc
+                                                                              nodes within a molecule. To meet the distance restraints, polyply
+transformation, which does not rely on a library of coordinate                implements a graph-based algorithm that puts upper and lower
+fragments. The system-building proceeds in ﬁve steps (cf. Fig. 2):            bounds on each step taken. Details and benchmarking are
+   Step1: Mapping all molecules to one bead per residue                       provided in Supplementary Fig. 2 and Supplementary Note 4,
+   In the ﬁrst step, the topology ﬁle is analyzed and all molecule            subsection 2. All additional conditions have to be speciﬁed in a
+types in the system are detected. For each molecule, all unique               build ﬁle. The ﬁle syntax for the build ﬁle is available online
+residues are identiﬁed and converted to blocks. A generic one                 (https://github.com/marrink-lab/polyply_1.0/wiki/Syntax:-build-
+bead per residue super CG model is created and stored in the                  ﬁle). Furthermore, to generate starting structures for polymers
+form of a graph. The underlying connectivity of the residue graph             with high persistence lengths, polyply implements a feature that
+is extracted from the bonded graph of the molecules.                          lets the user set a persistence length. Subsequently, the program
+   Step 2: Generate coordinates for residues                                  samples from the end-to-end distance distribution of the worm-
+   Each block is a graph of a single residue and graph                        like chain model and use the distance restraint algorithm to set
+embedding is used to generate coordinates for this residue.                   the end-to-end distance (see Supplementary Note 3 for more
+Due to the speciﬁc requirements of molecular geometry, we                     details). All interactions are computed considering rectangular
+utilize a two-step graph embedding. First, initial coordinates are            periodic boundary conditions using the scipy c-implementation
+generated using the Kamada-Kawai45 embedding as implemen-                     of the KD-tree46. Using a KD-tree makes it possible to compute a
+ted in the NetworkX library43. Subsequently, we perform a                     large number of distances within a cut-off efﬁciently within
+geometry optimization based on the bonded interactions within                 python.
+the residue using the scipy46 implementation of the Limited-                     Step 5: Backmapping
+memory Broyden–Fletcher–Goldfarb–Shanno minimizer47 (see                         Low-resolution coordinates are transformed to the higher
+Supplementary Fig. 1A for a detailed workﬂow). As presented in                resolution target coordinates by a residue template-based back-
+Supplementary Note 3 benchmarking on the residues in the                      mapping procedure (Supplementary Fig. 3A) similar to those
+library shows that this procedure yields reliable coordinates for             used for biomolecules48. First, the center of geometry of the
+residues.                                                                     residue template is moved to the CG position. Subsequently, we
+   Step 3: Derive parameters for the generic CG model                         optimize the rotation of the template around the center of
+   In the self-excluding random walk, a one bead per residue                  geometry such that atoms that have a bond to other residues are
+approximate CG model is used. It is based upon a Lennard–Jones                placed close to those residues. To do this we ﬁrst perform a
+(LJ) potential as the interaction function. The epsilon parameter             connection analysis ﬁnding which atoms connect to atoms of the
+
+4                 NATURE COMMUNICATIONS | (2022)13:68 | https://doi.org/10.1038/s41467-021-27627-4 | www.nature.com/naturecommunications
+NATURE COMMUNICATIONS | https://doi.org/10.1038/s41467-021-27627-4                                                                   ARTICLE
+
+neighboring residues. If the target resolution coordinates are                  not optimized, relaxation to target density and end-to-end
+available, they are used over CG coordinates. Overall, this aligns              distance is typically observed within 50 ns or less, as shown in
+the residue template with the chain backbone in a generic fashion.              Supplementary Fig. 5 for a subset of systems. Figure 3c shows a
+This procedure is also applicable to branched residues and                      single chain of PS 100 in a melt after 5 ns of simulation. Other
+optimizing the rotation is efﬁciently done in python. Similar to                chains are removed within a 1 nm radius around that chain to
+the idea in the backward program49 the template residue                         illustrate the coil-like conformation of the chain in the melt.
+coordinates are scaled by a fudge factor of 0.45 from the center                Figure 3d shows the typical time it takes to generate coordinates
+of geometry. In the ﬁnal step, the user has to run a regular                    for different numbers of total residues using polyply. Generating
+geometry optimization. This causes the coordinates to relax to a                CG residues is slightly faster than generating atomistic residues.
+ﬁnal state that can be used as input to run an equilibration                    Overall melts of up to 50,000 residues are typically generated in
+simulation. As discussed in Supplementary Note 3, subsection 3                  less than 5 min. Larger systems in the order of 1 million residues
+this procedure is efﬁcient in avoiding high energy states as well as            are generated within less than 70 min.
+artifacts such as interlocking rings.
+   To implement chirality, we currently use a speciﬁc improper
+dihedral that forces chirality during the energy minimization step              Single-stranded DNA and circular single-stranded DNA. DNA
+and/or during the template generation.                                          is an important bio-macromolecule that expresses and regulates
+   In the following sections, we will demonstrate the capability of             genetic information in cells. Whereas most of the genetic infor-
+the program with some examples for realistic systems. In general,               mation is encoded in double-stranded DNA (dsDNA), single-
+we will brieﬂy present the steps required to generate both input                stranded DNA (ssDNA) is frequently important in replication
+parameter ﬁles and coordinates. For each system, we ran a small                 and repair processes. Beyond this, there are also a number of
+simulation to conﬁrm the parameters are correct and the system                  DNA viruses that encode their genetic information in ssDNA,
+is stable.                                                                      and ssDNA patches are for instance found in telomers50. Gen-
+                                                                                erating realistic structures for ssDNA provides another level of
+                                                                                challenge to the multiscale random-walk protocol. On the one
+Polymer melts at atomistic and CG level. Simulation of amor-                    hand, DNA nucleobases are large residues with about 30 atoms at
+phous polymers or melts is the backbone of much research in                     the all-atom level. On the other hand, the persistence length of
+material science and polymer science in general. Depending on                   ssDNA is about 3-10 times higher than that of most ﬂexible
+the length and time scales that are needed atomistic resolution or              polymers50. Finally, ssDNA is highly charged and known to
+CG models are utilized. Here, we demonstrate that polyply is                    coordinate ions around the chain increasing the persistence
+capable of generating realistic melt conformations independent of               length50. To verify that polyply is able to generate conﬁgurations
+the target force-ﬁeld, and we analyze its performance. In parti-                for these macromolecules, we implemented the Parmbsc1 force-
+cular, we have generated melt systems of varying sizes for poly                 ﬁeld38 into polyply and built a distribution of poly-T ssDNA with
+methyl acrylate (PMA), polystyrene (PS), poly methyl metha-                     different lengths (8, 16, 50, 65, 100 bases). For each length, 100
+crylate (PMMA), poly vinyl alcohol (PVA), polyethylene (PE),                    replicas were generated. The persistence length of DNA is known
+and PEO. For each system, we generated the required parameter                   to change as a function of the salt concentration50. For each chain
+ﬁles and initial coordinates for 100 chains of length 50, 100, 250,             length, we, therefore, set two experimentally determined persis-
+and 500. Each of these systems was generated at an atomistic level              tence lengths (3.2 nm, 1.4 nm) corresponding to low (12.4 mM/L)
+using GROMOS and CG level using the Martini3 force-ﬁeld.                        and high (1 M/L) salt concentrations. This resulted in 1000 DNA
+Figure 3a shows the atomistic structures of the six polymer spe-                structures generated by polyply. Figure 4a shows the radius of
+cies surveyed and overlaid as circles those atoms treated as one                gyration as a function of chain length for the two sets of persis-
+particle in the Martini CG models. After system generation with                 tence lengths compared to SAXS values. Note that the random-
+polyply, we ran an energy minimization and computed the                         walk protocol is not biased against the radius of gyration.
+average end-to-end distance of the polymers from the minimized                  Agreement between the generated structures and the experi-
+conﬁguration. To improve statistics, ten replicas of each system                mentally measured values is good. A further characteristic of
+were generated leading to a total of 480 systems. The initial target            polymer conformations frequently applied in polymer physics is
+densities are reported in Supplementary Table 3.                                the scaling of the radius of gyration with the number of mono-
+   In a melt, polymer conformations can be described by ideal                   mers following the equation (RG = A × Nv). The scaling measured
+chain statistics. Some properties like the end-to-end distance can              with polyply at low salt concentration (v = 0.71 ± 0.01) matches
+be computed from theory utilizing experimental input quantities                 the scaling found in experiment (v = 0.72 ± 0.01) whereas the
+such as the characteristic ratio. To show that the initial polyply              scaling at high salt concentrations (v = 0.55 ± 0.01) is somewhat
+conformations are realistic for melts, we computed the expected                 lower but still close to experiment (v = 0.57 ± 0.02). Figure 4b
+end-to-end distance using two models—the hindered rotation                      shows two DNA chains with (100 bases) corresponding to the
+model (HRM) and the worm-like-chain model (WCM)—and                             average radius of gyration seen in Fig. 4a. The principle com-
+compare those distances to the end-to-end distance generated by                 ponents of the chains were aligned showing that both are
+polyply. Figure 3b shows the comparison. Overall, the polyply                   extended but the chain with higher persistence length clearly is
+structures clearly follow the trends of both models, but also the               more elongated. To further investigate how good polyply DNA
+quantitative agreement is good with mean absolute errors of                     structures are a starting point for AA simulations, we ran a
+about 5.8 Å compared to the HRM and 9.5 Å compared to the                       simulation of poly-T at the all-atom level and low salt con-
+WCM. For the WCM we also compared the distributions                             centration. As shown in the Supplementary Note 5, subsection 2
+obtained from polyply and the model as shown in Supplementary                   the end-to-end distance and radius of gyration distribution
+Fig. 4. We ﬁnd a good qualitative agreement.                                    obtained in an unbiased simulation overlap with those generated
+   It should be noted that of course the density and end-to-end                 by polyply. Finally, we generated coordinates for the full genome
+distance of the force ﬁeld can be different from experiment or                  (1767 bases) of the porcine virus within the virus capsid at the all-
+theory. The end-to-end distance can be further ﬁne-tuned by                     atom Amber level. First the known genome sequence51 was
+optimizing the step length of the random walk. However, even if                 converted to a circular graph and then used as input to polyply
+
+
+NATURE COMMUNICATIONS | (2022)13:68 | https://doi.org/10.1038/s41467-021-27627-4 | www.nature.com/naturecommunications                             5
+ARTICLE                                                                   NATURE COMMUNICATIONS | https://doi.org/10.1038/s41467-021-27627-4
+
+
+
+
+Fig. 3 Characteristics of melt systems generated by polyply and performance. a Atomistic structure (orange) and mappings to Martini level (blue) for all
+six polymer species surveyed. b End-to-end distance of the melt structures generated with polyply compared to those obtained by theory using the HRM
+(left) and WCM (right). Blue squares indicate Martini structures, and orange diamonds GROMOS. For each of the polymers 10 systems with four different
+chain lengths (50, 100, 250, 500) were built. c Single chain of atomistic Polystyrene with 100 residues shown in the melt, other chains are shown in gray
+and residues within 1 nm are omitted for clarity The backbone of the chain is highlighted in orange and the side chains in yellow. d Typical time for
+generating coordinates with polyply for different total numbers of residues. The performance is shown per force-ﬁeld (blue: Martini3, orange: GROMOS),
+averaged over all systems in panel b leading to a total sample size of n = 60 for all systems with less than 1 million residues. In addition, systems with 1
+million residues have also been set up as a further benchmark, however, considering only ﬁve replicas (i.e. n = 5). The boxplots are shown as the median
+within the bounding box corresponding to Interquartile-range (IQR) (Q3–Q1) and Tukey-style whiskers extending to 1.5 IQR. Open circles are outliers and
+in the case of atomistic melt systems, the outliers are all from melt systems of Polyethylene. Source data are provided as a source data ﬁle.
+
+gen_params to generate the input parameters. Subsequently                      poses several technical challenges: (1) The system has to be
+coordinates were generated for the entire system using polyply                 obtained in the phase-separated state. Modeling salts in common
+gen_coords. A detailed protocol can be found in Supplementary                  bead-spring models or mean-ﬁeld theories is difﬁcult when the
+Note 5, subsection 5 and Supplementary Fig. 7. Important to note               effect on phase separation is unknown. (2) The salt has to be
+is that the coordinates of the capsid52 have to be supplied as input           distributed within the PEO layer but without generating overlaps.
+to polyply together with the constraint that the ends of the DNA               Especially, for the commonly used large anions this becomes
+chain must be in contact (i.e., circular) and that one sodium must             problematic. (3) In principle, the material is best represented by a
+be placed near each DNA residue to ensure the neutrality of the                multilamellar system, in which for example cross conduction can
+DNA within the capsid. Afterwards the system was relaxed and                   also be observed even though for PS-b-PEO this is known to be
+we ran 60 ns of equilibration of the entire system with no                     less problematic. In this example, we will show how to create a
+restraints on the DNA to ascertain that the system is stable.                  multi-lamellar system of PS-b-PEO doped with lithium bistri-
+                                                                               ﬂimide (LiTFSI) using realistic polymer length as well as repre-
+Polymeric lithium-ion battery. Ion conducting polymers for the                 senting the ions explicitly. Our target system comes from the
+application in lithium-ion batteries has been a very active ﬁeld of            experimental work of the group of Balsara, who has exhaustively
+research for many years11,35,53. Block-copolymer systems, con-                 studied PS-b-PEO doped with LiTFSI54.
+sisting of one conducting polymer and one polymer improving                       The block-copolymer in this example consists of PS with a
+the mechanical stability, are a very promising route to new and                molecular weight of 6.4 kg/mol (~63 monomers) and PEO with a
+enhanced batteries. Simulation of ion conduction in these sys-                 molecular weight of 7.3 kg/mol PEO (~163 monomers). LiTFSI is
+tems, however, are less common as creating the initial coordinates             mixed in using a ratio of Li to PEO monomers of 0.085.
+
+
+6                  NATURE COMMUNICATIONS | (2022)13:68 | https://doi.org/10.1038/s41467-021-27627-4 | www.nature.com/naturecommunications
+NATURE COMMUNICATIONS | https://doi.org/10.1038/s41467-021-27627-4                                                                      ARTICLE
+
+
+
+
+Fig. 4 Single-stranded DNA test case. a Average radius of gyration from an ensemble of polyT generated with polyply using two different persistence
+lengths (1.4 nm; 3.2 nm) compared to the radius of gyration from SAXS. b polyT chains of 100 bases corresponding to the average radii of gyration in (a).
+The principle components have been aligned. c Schematic of generating circular ssDNA for the full genome of the porcine virus. Final coordinates are
+shown on the right with the DNA colored by nucleobases and the virus capsid in cyan. The image of the genome sequence was adopted from ViralZone SIB
+Swiss Institute of Bioinformatics. Source data are provided as a source data ﬁle.
+
+   From the experimental work it is known that this composition                 proﬁles (Supplementary Figure 9), the space is completely ﬁlled
+forms a lamellar phase with a domain spacing of 20 nm. The                      with polymer and salt.
+Martini input ﬁles for the polymers are simply generated using
+polyply gen_params and our Martini library of polymers. To
+generate the starting structure in the phase-separated state, we                Lipid vesicle with liquid–liquid phase separated interior.
+specify rectangular geometric restrictions on where each part of                Liquid-liquid phase separation (LLPS) is an important driving force
+the block-copolymer is allowed in the box. To that end, we deﬁne                in both biotechnological applications and biological systems. Sys-
+six alternating domains of 12 and 6 nm sizes in which PEO and                   tems capable of undergoing LLPS are therefore of high interest to
+LiTFSI or PS are allowed, respectively. The domains are unequal                 many researchers and are not only studied experimentally but also
+because the volume fractions of PS and PEO are not the same. To                 at various levels of theory10,56. Concerning cellular processes, LLPS
+provide the Martini consistent domain spacing, we generated a                   is speculated to have promoted the early stages of life by allowing to
+system with a single lamella and equilibrated the volume. The                   form simple compartmentalization, which eventually lead to
+thin ﬁlm is generated in two steps, aiming at a uniform salt                    the evolution of membrane-less organelles inside modern day
+distribution in the PEO part. In a ﬁrst step, the salt is dispersed             cells57,58. As such, studying LLPS in the context of cellular envir-
+throughout the box placing it inside the domains where PEO is                   onments is of considerable interest. While the supporting programs
+allowed. Figure 5a shows the salt as well as the domain                         for bio-molecular simulations allow the generation of cell mem-
+boundaries as obtained after this step. Subsequently, we generate               brane structures of entire mitochondria or virus envelopes, ﬁlling
+a grid of starting points on the boundary of these domains.                     those with anything else than water and ions is usually challenging,
+Starting on these grid points the chains are grown into the                     especially when polymer phases are to be simulated. In this
+domains by our random walk using the generic super CG model.                    example, we set up a system consisting of a multicomponent
+This approach has previously been shown to be adequate for                      lipid vesicle, composed of dioleoyl-phosphatidylcholine (DOPC),
+simple bead spring models as well34,55. Finally, the program                    dipalmitoyl-PC (DPPC), and cholesterol, and containing PEGylated
+backmaps the structure to Martini’s target resolution. Once the                 1-palmitoyl-2-oleoyl-phosphatidylethanolamine (POPE) lipids, ﬁl-
+starting structure is generated, which typically for this size of               led with a phase-separated aqueous solution consisting of PEO and
+system takes 30 min, energy minimization is performed. Subse-                   dextran in the interior. This system has been experimentally shown
+quently a short equilibration of 5 ns keeping the z-dimension                   to induce vesicle ﬁssion and therefore gives insight into the gen-
+ﬁxed and only applying pressure coupling in xy is performed to                  eration of early life59. Similar systems are also considered important
+allow for chain packing to increase orthogonal to the stack                     to the development of synthetic cells60.
+direction. Subsequently we ran a 50 ns equilibration under                         This example not only demonstrates that polyply interfaces well
+constant area only coupling the z-direction to equilibrate the                  with the area of biomolecular simulations, but also demonstrates
+salt distribution. Figure 5b shows the morphology of the system                 several technical challenges: (1) PEGylated lipids require the addition
+after this short equilibration phase. The thin ﬁlm has a size of                of PEG to the lipids of the vesicle and need to be placed without
+about 60 nm × 60 nm × 10 nm and comprises roughly 600,000                       penetrating the bilayer; (2) dextran is a branched sugar polymer,
+particles. As shown by the zoomed view as well as the density                   which typically has a statistical distribution of molecular weights and
+
+
+NATURE COMMUNICATIONS | (2022)13:68 | https://doi.org/10.1038/s41467-021-27627-4 | www.nature.com/naturecommunications                                 7
+ARTICLE                                                                   NATURE COMMUNICATIONS | https://doi.org/10.1038/s41467-021-27627-4
+
+
+
+
+Fig. 5 Phase separated block-copolymer PS-b-PEO doped with lithium bistriﬂimide (Li-TFSI) generated with polyply. a Li-TFSI salt placed within the
+domains where PEO is going to be located. The zoom provides a more detailed view of the salt also showing that there is empty space in the initial
+dispersion. b Structure obtained after growing in the block-copolymer around the salt shown in panel A and running 50 ns of equilibration. The generated
+morphology contains six lamellar regions. The zoom shows an in-depth view onto the interface between the two polymers, showing that empty space has
+been ﬁlled. Below both panels, the mapping of the all-atom residues to the CG level is shown.
+
+branches; (3) the coacervate needs to be generated in the phase-
+separated state. To overcome this challenge, ﬁrst, parameter ﬁles for
+PEGylated lipids and PEO are generated using the Martini library
+and the gen_params tool. The molecular weights of PEO in the
+vesicle and in the PEGylated lipids are 2000 g/mol (~45 monomers)
+and 8000 g/mol (~180 monomers), respectively. Generating para-
+meter ﬁles for dextran is more complicated, however. Dextran is a
+polysaccharide composed of α-1,6 linked glucose residues with α-1,3
+connected branches. In addition, it is in general polydisperse and the
+branching depends on the molecular weight. For the target molecular
+weight of 10,000 g/mol, dextran has on average 5% branches from
+the main chain with a length of up to three residues61,62. To model
+the diversity in dextran’s molecular structure we generated 500
+residue graphs, with random number of branches and lengths as
+outlined in the Supplementary Notes 5, subsection 4. The whole
+workﬂow used to generate the system is described in Supplementary              Fig. 6 Liquid-liquid phase separation inside a vesicle. The vesicle is
+Fig. 10. Using this distribution of structures (Supplementary Fig. 11),        composed of DOPC, DPPC, cholesterol, and PEGylated POPE (PEG part in
+polyply gen_params was used to create parameter ﬁles for all those             orange), containing a coacervate of PEO (red) and dextran (yellow). Inside
+structures, which took less than 15 min.                                       and outside the vesicle are water and sodium to counterbalance the
+   To generate starting coordinates for this system, we ﬁrst                   negatively charged PEGylated POPE. The diameter of the vesicle is 40 nm
+obtained a vesicle using TS2CG24. As there are more specialized                and the left half is ﬁlled with PEO and the right with dextran. Some
+programs to generate lipid bilayers in various shapes and forms it             polymers in the upper right and lower left are omitted to show the ions and
+was not our intention to also generate those using polyply. The                PEG tails of the PEGylated lipids on the inside. The zoom shows more detail
+lipid coordinates generated by TS2CG were given as starting                    of the membrane showing a PEGylated lipid extending from the bilayer
+structure to polyply. In addition, a geometric constraint was used             surface.
+to specify that PEO and dextran can only occupy half of the
+vesicle, approximating it as a sphere, with a region of 2 nm                   Discussion
+overlap to allow some interphase mixing. With this input, the                  The increase in computing power propels MD simulations of
+system is generated by our generic super CG random walk                        systems into new areas, which in their complexity or size were
+followed by a backmapping step. Polyply also automatically                     unmanageable only a few years ago. However, equilibration of
+identiﬁes that PEGylated lipids have to be extended, as the                    such systems far from the desired equilibrium state takes time
+random walk algorithm will steer the conformations away from                   and is costly in terms of computing power. A second compli-
+the membrane. Generating the entire system took about 30 min.                  cating factor relates to generating input ﬁles for such simulations,
+Once the initial coordinates are obtained, an energy minimization              as setting up the input parameters not only takes human time but
+was run, followed by a short equilibration and 50 ns of                        is also intrinsically error-prone. The latter aspect becomes espe-
+production run. The system was stable, and its ﬁnal conﬁguration               cially problematic when HT approaches are being designed.
+is shown in Fig. 6. We clearly see that the system remains phase-              Programs which facilitate HT MD simulations featuring multi-
+separated at least over the timescale simulated and that the                   component complex systems are therefore highly desirable. While
+PEGylated lipids are uniformly distributed both on the inside and              those exist for biomolecular simulations, they are largely missing
+outside of the bilayer.                                                        in the ﬁeld of material science. To resolve this situation, we have
+
+
+8                  NATURE COMMUNICATIONS | (2022)13:68 | https://doi.org/10.1038/s41467-021-27627-4 | www.nature.com/naturecommunications
+NATURE COMMUNICATIONS | https://doi.org/10.1038/s41467-021-27627-4                                                                   ARTICLE
+
+deﬁned ﬁve major challenges a program needs to be able to solve:                compared very well to theoretical calculations for melts. This
+(1) it needs to be resolution and force-ﬁeld independent; (2) able              suggests that the distribution of conformations and entanglement
+to set up complex and large systems; (3) support arbitrary com-                 produced by polyply are realistic, providing a good starting point
+plex molecular topologies (i.e., branching); (4) be able to generate            close to the equilibrium conﬁguration. This is further conﬁrmed
+complex morphologies; and (5) and ﬁnally be reasonably fast to                  by running test simulations for some replicas, which show little
+permit HT research.                                                             relaxation of the end-to-end distance to the force-ﬁeld speciﬁc
+   In this paper, we have presented polyply, a software suite that              value as well as to the force-ﬁeld speciﬁc target density. Whereas
+is aimed at facilitating simulations involving polymers at any                  classical polymer melts consist of relatively ﬂexible polymers,
+target resolution and force-ﬁeld desired. Parameter ﬁle genera-                 especially biomacromolecules such as DNA can have long per-
+tion and coordinate generation are split into two independent                   sistence lengths. By generating ssDNA conﬁgurations setting
+programs—polyply gen_params and polyply gen_coords. The                         different persistence lengths and comparing to experimentally
+gen_params program implements the graph transformation used                     available SAXS data, it was demonstrated that polyply can also
+within polyply to generate parameter ﬁles. The algorithm takes a                handle stiff polymers in a satisfactory fashion. Furthermore, the
+residue graph and maps it into a higher resolution graph, which                 multiscale coordinate generation uses a random walk breadth-
+is agnostic to the target resolution thereby meeting the ﬁrst of the            ﬁrst traversal of the molecular graph. This means residues
+challenges outlined above. It further matches fragments, which                  which are connected by bonded interactions are placed close in
+describe the bonded interactions between residues, by ﬁnding all                space, making it possible to generate even complex branched
+subgraph isomorphisms between these fragments and the residue                   structures.
+graph provided. Therefore, it will also assign parameters for                      Using a one bead per residue CG model not only makes the
+complex branched or cyclic polymers. This has been shown to                     approach force-ﬁeld and resolution-independent, but it also
+work based on our test cases. Especially the last test case                     greatly increases the performance. We assessed the performance
+exempliﬁed this aspect, where polyply was used to generate a                    for 480 melt systems up to 50,000 residues. For polystyrene at
+statistical distribution of the branched dextran polymer that                   Martini level 50,000 residues equates to 200,000 coordinates and
+involves two different linkage types between otherwise equivalent               at GROMOS level to 600,000 coordinates. These systems are
+residues. As outlined in the challenges, polyply is also applicable             typically generated in less than 5 min independent of the chain
+to bio-macromolecules, which we have shown previously by                        length and target force-ﬁeld. This performance compares favor-
+using polyply as part of a protocol for setting up PEGylated                    ably to the recently published PyPolyBuilder, which takes about
+proteins63 and glycans on the SARS-CoV2 spike protein64. We                     8 min for a single chain of 1248 coordinates29. To further
+also demonstrated that polyply is capable of generating input                   benchmark the performance of the structure generation, we also
+parameters for single-stranded (circular) DNA, further                          set up systems with 1 million residues, corresponding to 13
+strengthening our claim that the program is applicable to a wide                million coordinates for atomistic polystyrene. These are generated
+range of biopolymers.                                                           on average within less than an hour on a single core.
+   In addition to supporting large and complex polymers, gen-                      As the generic multiscale approach is very efﬁcient in packing
+erating input parameter ﬁles is also fast, making it suitable for               even long polymer chains, it was possible to augment it with
+HT applications. For example, generating a parameter ﬁle for an                 further acceptance criteria to steer the random walk chain pla-
+atomistic polystyrene chain of 1000 residues, which involves                    cement. For example, it is possible to force the direction of the
+more than 100,000 bonded interactions, takes less than 10 s.                    random walk, which makes it very suitable for generation bru-
+Overall, we showed that the polymer parameter generation meets                  shes. An example is outlined as part of our online tutorials. In
+all requirements outlined in the challenges. Currently, the main                addition, simple geometrical constraints can be utilized to build
+limitation of the parameter generation is that it is limited to                 phase-separated systems. By generating a liquid–liquid phase
+GROMACS input ﬁles. However, extension to other MD soft-                        separated system consisting of highly branched dextran and PEO
+ware is possible and would only require additional input ﬁle-                   inside a vesicle as well as a micro phase-separated block copo-
+parsers as the core of the code makes no calls to the GROMACS                   lymer PS-b-PEO system, we have shown that these tools can
+software itself. Meanwhile, interested users can already use                    generate a variety of inhomogeneous systems. The former
+existing input ﬁle converters65 to connect polyply to other MD                  example also shows that it can easily be combined with already
+engines. Supplementary Table 2 provides an overview of con-                     existing systems, especially those for which more specialized
+version programs.                                                               builders exits, such as lipid membranes. Finally, we showed an
+   As further outlined in the challenges, structure generation is a             implementation of a distance restraint algorithm that lets users
+key step for any program. It needs to be fast and generate com-                 deﬁne target distances between nodes. This enables polyply for
+plex structures that are good enough to start the simulation                    example to create large macrocycles such as circular DNA, as
+without extensive relaxation. To this end, polyply gen_coords                   demonstrated by generating the complete circular genome of the
+implements a multiscale approach to generation of condensed                     porcine virus. Furthermore, this algorithm in principle enables
+phase systems at near to target density. The multiscale approach                users to take experimental information into account. For exam-
+is based upon using a generic one bead per residue CG model,                    ple, distances from NMR experiments could be converted to
+performing a self-excluding random walk, and backmapping it to                  distance restraints.
+target resolution. The interaction potential used for the self-                    Overall, these examples demonstrate that polyply is capable of
+excluding random walk, which essentially approximates the                       setting up large and complex systems, with an excellent perfor-
+volume of a residue, is directly computed from the geometry of                  mance in a realistic but force-ﬁeld and resolution-independent
+the residue as well as the force-ﬁeld parameters of the target                  manner. However, the coordinate generation also has some lim-
+polymer. Thus, our multiscale approach can be used independent                  itations. Custom non-bonded or bonded interactions that deviate
+of the force-ﬁeld and target resolution. To further validate the                from standard bonded interactions or the default pairwise LJ
+robustness and quality of this approach, we generated 480 melt                  interactions are currently not taken into account. It is not possible
+systems at two levels of resolution for four polymer species. For               to generate coordinates for polymers that have a well-deﬁned
+all systems an energy minimization could be run without failure.                geometry such as double-stranded DNA, neither at the all-atom
+Not only were the systems stable, but the average end-to-end                    or CG level. As DNA geometry is well deﬁned, we are working on
+distance of the initial frames also averaged over ten replicas                  an extension that would allow us to generate dsDNA taking those
+
+NATURE COMMUNICATIONS | (2022)13:68 | https://doi.org/10.1038/s41467-021-27627-4 | www.nature.com/naturecommunications                             9
+ARTICLE                                                                            NATURE COMMUNICATIONS | https://doi.org/10.1038/s41467-021-27627-4
+
+
+constraints into account. A further limitation is that currently the                    Reporting summary. Further information on research design is available in the Nature
+structure generation only supports rectangular PBC conditions.                          Research Reporting Summary linked to this article.
+Although they are sufﬁcient for a wide variety of systems, more
+complex PBC conditions could be implemented by extending the                            Data availability
+scipy cKD tree, which is the workhorse for interaction compu-                           The polymer model parameters used in the examples are part of the polyply library
+                                                                                        (https://github.com/marrink-lab/polyply_1.0/tree/master/polyply/data). Input ﬁles and
+tations. Finally, while simple geometric restrictions for the
+                                                                                        protocols for generating the example test cases can be found in the polyply regression test
+random-walk work ﬁne for many applications, extending them to                           repository (https://github.com/marrink-lab/polyply_regression_tests/tree/main/
+arbitrarily shaped boundary surfaces would enable to directly                           examples). Tutorial input ﬁles are available from the same repository (https://
+read in experimental density maps and then grow polymers on                             github.com/marrink-lab/polyply_regression_tests/tree/main/tutorial_ﬁles). Source data
+top of those. This would require some form of triangulated sur-                         are provided with this paper.
+faces to be used as boundary surfaces, as is done in TS2CG24.
+   In conclusion, we have demonstrated that the software suite                          Code availability
+polypy, presented here, is able to generate input ﬁles and starting                     Polyply is distributed via the pypi package index (https://pypi.org/project/polyply/) and
+                                                                                        is developed publically on GitHub (https://github.com/marrink-lab/polyply_1.0) under
+coordinates for complex and challenging systems, connecting the
+                                                                                        the permissive Apache-2.0 license. Our wiki section on Github (https://github.com/
+bio-molecular world to material science.                                                marrink-lab/polyply_1.0/wiki/FAQs) provides an FAQ section for troubleshooting, as
+                                                                                        well as tutorials and additional information on ﬁle syntax.
+
+
+Methods                                                                                 Received: 18 May 2021; Accepted: 29 November 2021;
+MDs settings and analysis. All MD simulations were done with GROMACS66
+(versions 2020 and 2019), using the Verlet cut-off scheme. For the CG simulations,
+a cut-off of 1.1 nm was used for the LJ interactions, whereas the Coulomb inter-
+actions were computed within a cut-off of 1.1 nm, and PME for longer-range
+contribution to the electrostatics whenever the system at hand contained charges.
+The energy minimizations were done with the standard steepest descent algorithm
+as implemented in GROMACS. The CG MD simulations were performed using the               References
+default leap-frog integrator with a time-step of 20 fs in the isobaric-isochoric        1.    Baumgärtner, A. & Binder, K. Dynamics of entangled polymer melts: a
+ensemble. The temperature was kept constant using the v-rescale algorithm67 and               computer simulation. J. Chem. Phys. 75, 2994–3005 (1981).
+the pressure was coupled using the Berendsen barostat68, typically used for equi-       2.    Kremer, K. & Grest, G. S. Dynamics of entangled linear polymer melts: a
+libration of MD simulations.                                                                  molecular-dynamics simulation. J. Chem. Phys. 92, 5057–5086 (1990).
+    The atomistic MD simulations with the GROMOS 2016H66 force ﬁeld were                3.    Potestio, R., Peter, C. & Kremer, K. Computer simulations of soft matter:
+conducted with a cut-off of 1.4 nm for the LJ interactions and electrostatic                  linking the scales. Entropy 16, 4199–4245 (2014).
+interactions. Long-range electrostatics were further treated with the reaction ﬁeld     4.    Karatrantos, A., Clarke, N. & Kröger, M. Modeling of polymer structure and
+method, where the dielectric constant was set to 2 for all polymer systems, which is          conformations in polymer nanocomposites from atomistic to mesoscale: a
+reasonable considering the typical low dielectric constant of vinyl polymers.                 review. Polym. Rev. 56, 385–428 (2016).
+Atomistic simulations with the Parmbsc138 and Amber39 force-ﬁeld used a cut-off         5.    Gooneie, A., Schuschnigg, S. & Holzer, C. A review of multiscale
+of 1.0 nm for both LJ and electrostatic interactions. Long range electrostatics were          computational methods in polymeric materials. Polymers 9, 16 (2017).
+treated with PME. Energy minimizations were conducted as well with the steepest         6.    Steinhauser, M. O. Multiscale modeling, coarse-graining and shock wave
+descent algorithm and MD simulations were run with the default leap-frog                      computer simulations in materials science. AIMS Mater. Sci. 1319 (2017).
+integrator using a time-step of 1 fs for the integration. The time-step of 1 fs is      7.    Chen, Z., Huo, J., Hao, L. & Zhou, J. Multiscale modeling and simulations of
+necessary as the relaxation runs to target density are done using unconstrained               responsive polymers. Curr. Opin. Chem. Eng. 23, 21–33 (2019).
+bonds. For production runs the time-step can be increased to 2 fs with constrained      8.    Casalini, T. & Perale, G. From microscale to macroscale: nine orders of
+bonds, in principle. As explained for the CG simulations also the GROMOS                      magnitude for a comprehensive modeling of hydrogels for controlled drug
+simulations were run in the isobaric-isochoric ensemble using v-rescale67                     delivery. Gels. 5, 1–42 (2019).
+temperature coupling and Berendsen pressure coupling68. Analysis of the end-to-         9.    Alessandri, R., Grünewald, F. & Marrink, S. J. The Martini model in materials
+end distances and radii of gyration was done using MDAnalysis69 and gmx                       science. Adv. Mater. 33, 2008635 (2021).
+polystat66. Fitting of the radius of gyration data was done using the symﬁt (v.0.4.6)   10.   Sing, C. E. Development of the modern theory of polymeric complex
+under consideration of the standard error. Snapshots of simulations were prepared             coacervation. Adv. Colloid Interface Sci. 239, 2–16 (2017).
+with VMD70 (v. 1.4.9a) and ﬁgure complied with Inkscape (v.0.52.0) and                  11.   Sethuraman, V., Mogurampelly, S. & Ganesan, V. Ion transport mechanisms
+matplotlib71 (v.3.3.4).                                                                       in lamellar phases of salt-doped PS–PEO block copolymer electrolytes. Soft
+                                                                                              Matter 13, 7793–7803 (2017).
+                                                                                        12.   Deng, C. et al. Role of molecular architecture on ion transport in ethylene
+Systems. Polyply was run for all test-systems within python3 (v3.6.9 on local                 oxide-based polymer electrolytes. Macromolecules https://doi.org/10.1021/
+machines, and v3.8.2 on the Dutch National Supercomputer, Cartesius). For                     acs.macromol.0c02424 (2021).
+acceleration, the numba package72 was installed in all environments. All test sys-      13.   de Pablo, J. J. et al. New frontiers for the materials genome initiative. Npj
+tems were either run on a local desktop machine running Linux OS or on the                    Comput. Mater. 5, 41 (2019).
+national HPC cluster. The performance for parameter ﬁle generation and input            14.   Upadhya, R. et al. Automation and data-driven design of polymer
+coordinate generation were recorded on the HPC cluster for the CG systems,                    therapeutics. Adv. Drug Deliv. Rev. 171, 1–28 (2021).
+running 24 processes in parallel on a single node. On the other hand, atomistic         15.   Tabor, D. P. et al. Accelerating the discovery of materials for clean energy in
+benchmark times were recorded on a desktop machine running ten processes in                   the era of smart automation. Nat. Rev. Mater. 3, 5–20 (2018).
+parallel.                                                                               16.   Gormley, A. J. & Webb, M. A. Machine learning in combinatorial polymer
+                                                                                              chemistry. Nat. Rev. Mater. https://doi.org/10.1038/s41578-021-00282-3
+Models. The all-atom polymer models were implemented following the rules for                  (2021).
+creating polymers within the GROMOS 2016H66 force-ﬁeld and charges adopted              17.   Qi, Y. et al. CHARMM-GUI Martini maker for coarse-grained simulations
+from similar functional groups as is custom within GROMOS40. The current                      with the Martini force ﬁeld. J. Chem. Theory Comput. 11, 4486–4494 (2015).
+library does not only support homopolymers but all combinations of monomers.            18.   Jo, S., Kim, T., Iyer, V. G. & Im, W. CHARMM-GUI: a web-based graphical
+Parmbsc138 DNA parameters were adopted from the GROMACS implementation.                       user interface for CHARMM. J. Comput. Chem. 29, 1859–1865 (2008).
+The protein capsid Amber39 parameters were obtained from gmx pdb2gmx66.                 19.   Malde, A. K. et al. An automated force ﬁeld topology builder (ATB) and
+Martini CG models were parametrized newly following the Martini 3 guidelines for              repository: version 1.0. J. Chem. Theory Comput. 7, 4026–4037 (2011).
+making molecules or were adopted from existing Martini 2 models. Each new               20.   Danne, R. et al. doGlycans—tools for preparing carbohydrate structures for
+model was based on the GROMOS model, for which a system was generated with                    atomistic simulations of glycoproteins, glycolipids, and carbohydrate polymers
+poyply and run with the settings stated above. We note that these models are                  for GROMACS. J. Chem. Inf. Model. 57, 2401–2406 (2017).
+subject to future improvement and that currently only homopolymers are sup-             21.   Johnson, G. T. et al. cellPACK: a virtual mesoscope to model and visualize
+ported with the exception of PS and PEO block-copolymers. A detailed validation               structural systems biology. Nat. Methods 12, 85–91 (2015).
+of these models will be provided in a separate publication. The current (pre-           22.   Wassenaar, T. A., Ingólfsson, H. I., Böckmann, R. A., Tieleman, D. P. &
+liminary) versions are available from the polyply library (see code availability).            Marrink, S. J. Computational lipidomics with insane: a versatile tool for
+
+
+10                   NATURE COMMUNICATIONS | (2022)13:68 | https://doi.org/10.1038/s41467-021-27627-4 | www.nature.com/naturecommunications
+NATURE COMMUNICATIONS | https://doi.org/10.1038/s41467-021-27627-4                                                                                         ARTICLE
+
+      generating custom membranes for molecular simulations. J. Chem. Theory              51. Chen, F. et al. Complete genome sequence of porcine circovirus 2d strain
+      Comput. 11, 2144–2155 (2015).                                                           GDYX. J. Virol. 86, 12457–12458 (2012).
+23.   Machado, M. R. & Pantano, S. SIRAH tools: mapping, backmapping and                  52. Khayat, R. et al. The 2.3-angstrom structure of porcine circovirus 2. J. Virol.
+      visualization of coarse-grained models. Bioinformatics 32, 1568–1570 (2016).            85, 7856–7862 (2011).
+24.   Pezeshkian, W., König, M., Wassenaar, T. A. & Marrink, S. J. Backmapping            53. Mogurampelly, S., Borodin, O. & Ganesan, V. Computer simulations of ion
+      triangulated surfaces to coarse-grained membrane models. Nat. Commun. 11,               transport in polymer electrolyte membranes. Annu. Rev. Chem. Biomol. Eng.
+      1–9 (2020).                                                                             7, 349–371 (2016).
+25.   Soñora, M., Martínez L., Pantano S. & Machado M. R. Wrapping up viruses at          54. Yuan, R. et al. Ionic conductivity of low molecular weight block copolymer
+      multiscale resolution: optimizing PACKMOL and SIRAH execution for                       electrolytes. Macromolecules 46, 914–921 (2013).
+      simulating the zika virus. J. Chem. Inf. Model. (2020).                             55. Shen, K.-H., Brown, J. R. & Hall, L. M. Diffusion in lamellae, cylinders, and
+26.   Doerr, S., Giorgino, T., Martínez-Rosell, G., Damas, J. M. & De Fabritiis, G.           double gyroid block copolymer nanostructures. ACS Macro Lett. 7, 1092–1098
+      High-throughput automated preparation and simulation of membrane                        (2018).
+      proteins with HTMD. J. Chem. Theory Comput. 13, 4003–4011 (2017).                   56. Long, R., Hui, C.-Y., Gong, J. P. & Bouchbinder, E. The fracture of highly
+27.   Girard, M., Ehlen, A., Shakya, A., Bereau, T. & de la Cruz, M. O. Hoobas: a             deformable soft materials: a tale of two length scales. Annu. Rev. Condens.
+      highly object-oriented builder for molecular dynamics. Comput. Mater. Sci.              Matter Phys. 12 (2021).
+      167, 25–33 (2019).                                                                  57. Zwicker, D., Seyboldt, R., Weber, C. A., Hyman, A. A. & Jülicher, F. Growth
+28.   Yabe, M., Mori, K., Ueda, K. & Takeda, M. Development of PolyParGen                     and division of active droplets provides a model for protocells. Nat. Phys. 13,
+      Software to facilitate the determination of molecular dynamics simulation               408–413 (2017).
+      parameters for polymers. J. Comput. Chem. Jpn. 5, 1–5 (2019).                       58. Brangwynne, C. P., Tompa, P. & Pappu, R. V. Polymer physics of intracellular
+29.   Ramos, M. C. et al. pyPolyBuilder: automated preparation of molecular                   phase transitions. Nat. Phys. 11, 899–904 (2015).
+      topologies and initial conﬁgurations for molecular dynamics simulations of          59. Andes-Koback, M. & Keating, C. D. Complete budding and asymmetric division
+      arbitrary supramolecules. J. Chem. Inf. Model. 61, 1539–1544 (2021).                    of primitive model cells to produce daughter vesicles with different interior and
+30.   Choi, Y. K. et al. CHARMM-GUI polymer builder for modeling and                          membrane compositions. J. Am. Chem. Soc. 133, 9545–9555 (2011).
+      simulation of synthetic polymers. J. Chem. Theory Comput. 17, 2431–2443             60. Deshpande, S. & Dekker, C. Studying phase separation in conﬁnement. Curr.
+      (2021).                                                                                 Opin. Colloid Interface Sci. 52, 101419 (2021).
+31.   Qiu, L. et al. Enhancing doping efﬁciency by improving host-dopant                  61. Gekko, K. & Noguchi, H. Physicochemical studies of oligodextran. I.
+      miscibility for fullerene-based n-type thermoelectrics. J. Mater. Chem. 5,              Molecular weight dependence of intrinsic viscosity, partial speciﬁc
+      21234–21241 (2017).                                                                     compressibility and hydrated water. Biopolymers 10, 1513–1524
+32.   Sethuraman, V., Mogurampelly, S. & Ganesan, V. Multiscale simulations of                (1971).
+      lamellar PS-PEO block copolymers doped with LiPF6Ions. Macromolecules 50,           62. Gasciolli, V., Choplin, L., Paul, F. & Monsan, P. Viscous properties and
+      4542–4554 (2017).                                                                       molecular characterization of enzymatically size-controlled oligodextrans in
+33.   Alessandri, R. et al. Resolving donor-acceptor interfaces and charge carrier            aqueous solutions. J. Biotechnol. 19, 193–202 (1991).
+      energy levels of organic semiconductors with polar side chains. Adv. Funct.         63. Grünewald, F., Kroon, P. C., Souza, P. C. T. & Marrink, S. J. Protocol for
+      Mater. 1–11 (2020).                                                                     Simulations of PEGylated Proteins with Martini 3. in Structural Genomics:
+34.   Gartner, T. E. et al. Domain spacing and composition proﬁle behavior in salt-           General Applications (eds Chen, Y. W. & Yiu, C.-P. B.) 315–335 (Springer US,
+      doped cyclic vs linear block polymer thin ﬁlms: a joint experimental and                2021). https://doi.org/10.1007/978-1-0716-0892-0_18.
+      simulation study. Macromolecules 50, 7169–7176 (2017).                              64. Pezeshkian, W. et al. Molecular architecture of SARS-CoV-2 envelope by
+35.   Sharon, D. et al. Molecular level differences in ionic solvation and transport          integrative modeling. Preprint at bioRxiv https://doi.org/10.1101/
+      behavior in ethylene oxide-based homopolymer and block copolymer                        2021.09.15.459697 (2021).
+      electrolytes. J. Am. Chem. Soc. https://doi.org/10.1021/jacs.0c12538 (2021).        65. Shirts, M. R. et al. Lessons learned from comparing molecular dynamics
+36.   Canalle, L. A., Löwik, D. W. P. M. & Van Hest, J. C. M. Polypeptide-polymer             engines on the SAMPL5 dataset. J. Comput. Aided Mol. Des. 31, 147–161
+      bioconjugates. Chem. Soc. Rev. 39, 329–353 (2010).                                      (2017).
+37.   Abraham, M. J. et al. BioExcel Whitepaper on Scientiﬁc Software Development.        66. Abraham, M. J. et al. GROMACS: high performance molecular simulations
+      https://doi.org/10.5281/zenodo.1194634 (2018).                                          through multi-level parallelism from laptops to supercomputers. SoftwareX
+38.   Ivani, I. et al. Parmbsc1: a reﬁned force ﬁeld for DNA simulations. Nat.                1–2, 19–25 (2015).
+      Methods 13, 55–58 (2015).                                                           67. Bussi, G., Donadio, D. & Parrinello, M. Canonical sampling through velocity
+39.   Lindorff-Larsen, K. et al. Improved side-chain torsion potentials for the               rescaling. J. Chem. Phys. 126, 014101 (2007).
+      Amber ff99SB protein force ﬁeld. Proteins Struct. Funct. Bioinforma. 78,            68. Berendsen, H. J. C., Postma, J. P. M., van Gunsteren, W. F., DiNola, A. &
+      1950–1958 (2010).                                                                       Haak, J. R. Molecular dynamics with coupling to an external bath. J. Chem.
+40.   Horta, B. A. C. et al. A GROMOS-compatible force ﬁeld for small organic                 Phys. 81, 3684–3690 (1984).
+      molecules in the condensed phase: the 2016H66 parameter set. J. Chem.               69. Michaud-Agrawal, N., Denning, E. J., Woolf, T. B. & Beckstein, O.
+      Theory Comput. 12, 3825–3850 (2016).                                                    MDAnalysis: a toolkit for the analysis of molecular dynamics simulations. J.
+41.   Marrink, S. J., Risselada, H. J., Yeﬁmov, S., Tieleman, D. P. & De Vries, A. H.         Comput. Chem. 32, 2319–2327 (2011).
+      The MARTINI force ﬁeld: coarse grained model for biomolecular simulations.          70. Humphrey, W., Dalke, A. & Schulten, K. {VMD} - {V}isual {M}olecular {D}
+      J. Phys. Chem. B 111, 7812–7824 (2007).                                                 ynamics. J. Mol. Graph. 14, 33–38 (1996).
+42.   Souza, P. C. T. et al. Martini 3: a general purpose force ﬁeld for coarse-grained   71. Hunter, J. D. Matplotlib: a 2D graphics environment. Comput. Sci. Eng. 9,
+      molecular dynamics. Nat. Methods 18, 382–388 (2021).                                    90–95 (2007).
+43.   Hagberg, A. A., Schult, D. A. & Swart, P. J. Exploring Network Structure,           72. Lam, S. K., Pitrou, A. & Seibert, S. Numba. in Proc. Second Workshop on the
+      Dynamics, and Function using NetworkX. in Proc. 7th Python in Science                   LLVM Compiler Infrastructure in HPC—LLVM ’15 1–6 (ACM Press, 2015).
+      Conference (eds Varoquaux, G., Vaught, T. & Millman, J.) 11–15 (2008).                  https://doi.org/10.1145/2833157.2833162.
+44.   Kroon, P. C. Automate, Aggregate, Assemble. Diss. University of Groningen
+      (2020).
+45.   Kamada, T. & Kawai, S. An algorithm for drawing general undirected graphs.
+      Inf. Process. Lett. 31, 7–15 (1989).                                                Acknowledgements
+46.   Virtanen, P. et al. {SciPy} 1.0: fundamental algorithms for scientiﬁc computing     We would like to thank the Center for Information Technology of the University of
+      in Python. Nat. Methods 17, 261–272 (2020).                                         Groningen for their support and for providing access to the Peregrine high per-
+47.   Byrd, R. H., Lu, P., Nocedal, J. & Zhu, C. A limited memory algorithm for           formance computing cluster. S.J.M. acknowledges funding from the ERC via an
+      bound constrained optimization. SIAM J. Sci. Comput. 16, 1190–1208 (1995).          Advanced grant “COMP-MICR-CROW-MEM”, grant agreement ID 669723.
+48.   Stansfeld, P. J. & Sansom, M. S. P. From coarse grained to atomistic: a serial      Computational resources for this work were partly provided by the Dutch
+      multiscale approach to membrane protein simulations. J. Chem. Theory                National Supercomputing Facilities through NOW and partly by the French
+      Comput. 7, 1157–1166 (2011).                                                        National Supercomputing Center CINES via GENCI (grant A0060710138)
+49.   Wassenaar, T. A., Pluhackova, K., Böckmann, R. A., Marrink, S. J. & Tieleman,       awarded to L.M. The authors thank M. C. Ramos, Y.M.H. Gonçalves, and B.A.C.
+      D. P. Going backward: {a} ﬂexible geometric approach to reverse                     Horta, for checking the GROMOS input parameters and discussions on
+      transformation from coarse grained to atomistic models. J. Chem. Theory             modeling polymers with the 2016H66 GROMOS force-ﬁeld.; T.A. Mayer
+      Comput. 10, 676–690 (2014).                                                         and A.J. Gormley for discussions on high throughput polymer synthesis and
+50.   Sim, A. Y. L., Lipfert, J., Herschlag, D. & Doniach, S. Salt dependence of the      the future potential of simulations to enhance experimental high throughput
+      radius of gyration and ﬂexibility of single-stranded DNA in solution probed         protocols; Melanie König for her feedback and perspective on the ﬁgure design
+      by small-angle X-ray scattering. Phys. Rev. E 86, 1–5 (2012).                       and the writing.
+
+
+
+NATURE COMMUNICATIONS | (2022)13:68 | https://doi.org/10.1038/s41467-021-27627-4 | www.nature.com/naturecommunications                                                      11
+ARTICLE                                                                                NATURE COMMUNICATIONS | https://doi.org/10.1038/s41467-021-27627-4
+
+
+Author contributions                                                                        Reprints and permission information is available at http://www.nature.com/reprints
+F.G. conceived the project with suggestions from P.C.T.S., S.J.M., and L.M. F.G., P.C.K.,
+and R.A. developed the code and algorithms and performed initial testing. F.G. and R.A.     Publisher’s note Springer Nature remains neutral with regard to jurisdictional claims in
+conducted and analyzed the MD simulations pertaining to the test cases presented in the     published maps and institutional afﬁliations.
+paper and Supplementary Information with suggestions from P.C.T.S., F.G., P.C.T.S., and
+R.A. generated the polymer and molecule parameters. All authors contributed to writing
+the paper.                                                                                                    Open Access This article is licensed under a Creative Commons
+                                                                                                              Attribution 4.0 International License, which permits use, sharing,
+Competing interests                                                                         adaptation, distribution and reproduction in any medium or format, as long as you give
+The authors declare no competing interests.                                                 appropriate credit to the original author(s) and the source, provide a link to the Creative
+                                                                                            Commons license, and indicate if changes were made. The images or other third party
+                                                                                            material in this article are included in the article’s Creative Commons license, unless
+Additional information                                                                      indicated otherwise in a credit line to the material. If material is not included in the
+Supplementary information The online version contains supplementary material                article’s Creative Commons license and your intended use is not permitted by statutory
+available at https://doi.org/10.1038/s41467-021-27627-4.                                    regulation or exceeds the permitted use, you will need to obtain permission directly from
+                                                                                            the copyright holder. To view a copy of this license, visit http://creativecommons.org/
+Correspondence and requests for materials should be addressed to Siewert J. Marrink.        licenses/by/4.0/.
+
+Peer review information Nature Communications thanks Yuji Sugita and the other,
+anonymous, reviewer(s) for their contribution to the peer review of this work. Peer         © The Author(s) 2022
+reviewer reports are available.
+
+
+
+
+12                    NATURE COMMUNICATIONS | (2022)13:68 | https://doi.org/10.1038/s41467-021-27627-4 | www.nature.com/naturecommunications
+

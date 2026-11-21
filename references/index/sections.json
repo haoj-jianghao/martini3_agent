@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "note": "pdf_page = 1-based page in the PDF file; printed_page as printed on the page",
+  "entries": [
+    {
+      "source": "references/original/papers/Souza2021/supporting-information.pdf",
+      "derived": "references/derived/souza2021-si.txt",
+      "items": [
+        {
+          "id": "A1",
+          "title": "Blocks, chemical types and sizes",
+          "pdf_page": 4,
+          "printed_page": 4
+        },
+        {
+          "id": "A2",
+          "title": "Interaction matrix",
+          "pdf_page": 6,
+          "printed_page": 6
+        },
+        {
+          "id": "A3",
+          "title": "Interaction levels",
+          "pdf_page": 7,
+          "printed_page": 7
+        },
+        {
+          "id": "A4",
+          "title": "Labels",
+          "pdf_page": 10,
+          "printed_page": 10
+        },
+        {
+          "id": "C1",
+          "title": "Mapping and choice of bead sizes (incl. Supplementary Figure 6 mapping workflow)",
+          "pdf_page": 36,
+          "printed_page": 36
+        },
+        {
+          "id": "C2",
+          "title": "Chemical groups and bead assignment (Supplementary Tables 24, 25)",
+          "pdf_page": 38,
+          "printed_page": 38
+        },
+        {
+          "id": "Table24",
+          "title": "Default bead assignments for neutral fragments",
+          "pdf_page": 39,
+          "printed_page": 39
+        },
+        {
+          "id": "Table25",
+          "title": "Default bead assignments and charges for ions",
+          "pdf_page": 41,
+          "printed_page": 41
+        },
+        {
+          "id": "C3",
+          "title": "Bond distances based on molecular volume and shape (COG rule, SASA radii)",
+          "pdf_page": 41,
+          "printed_page": 41
+        },
+        {
+          "id": "C4",
+          "title": "Numerical stability of simulations (virtual sites, 180 deg angles, masses)",
+          "pdf_page": 44,
+          "printed_page": 44
+        }
+      ]
+    },
+    {
+      "source": "references/original/tutorial/tutorial.pdf",
+      "derived": "references/derived/tutorial-page.txt",
+      "items": [
+        {
+          "id": "5.1",
+          "title": "On the choice of bonded terms for the CG model (Figure 3: all-constraint vs hinge + virtual site)",
+          "pdf_page": 9,
+          "printed_page": "9/17 (browser footer)"
+        },
+        {
+          "id": "5.2",
+          "title": "Index files and generation of target distributions",
+          "pdf_page": "9-10",
+          "printed_page": null
+        }
+      ]
+    },
+    {
+      "source": "references/original/papers/alessandri2022/supporting-information.pdf",
+      "derived": "references/derived/alessandri2022-si.txt",
+      "items": [
+        {
+          "id": "FigS1",
+          "title": "Benzene and cyclohexane bonded parameters (COG bond lengths)"
+        },
+        {
+          "id": "FigS2",
+          "title": "Alkane bonded parameters extracted from AA simulations"
+        },
+        {
+          "id": "3/FigS3",
+          "title": "Advanced model design strategies; naphthalene constraint vs hinge models"
+        },
+        {
+          "id": "TableS1",
+          "title": "SASA values for rings"
+        },
+        {
+          "id": "TableS2",
+          "title": "Database: list of molecules (uID, name)"
+        }
+      ]
+    },
+    {
+      "source": "references/original/small-molecules/models/mapping-cgbuilder/oplsaa-LigParGen",
+      "items": [
+        {
+          "id": "mapping figures",
+          "title": "Per-molecule CG-builder mapping PNG + .ndx (atom indices refer to AA/oplsaa-LigParGen/<uID>_LigParGen.itp)"
+        }
+      ]
+    }
+  ]
+}

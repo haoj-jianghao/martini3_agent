@@ -1,0 +1,1207 @@
+                                HHS Public Access
+                                Author manuscript
+                                Nat Methods. Author manuscript; available in PMC 2025 October 26.
+Author Manuscript
+
+
+
+
+                    Published in final edited form as:
+                     Nat Methods. 2021 April ; 18(4): 382–388. doi:10.1038/s41592-021-01098-3.
+
+
+
+                    Martini 3: A General Purpose Force Field for Coarse-Grained
+                    Molecular Dynamics
+                    Paulo C. T. Souza*,1,2, Riccardo Alessandri1, Jonathan Barnoud1,3, Sebastian Thallmair1,4,
+                    Ignacio Faustino1, Fabian Grunewald1, Ilias Patmanidis1, Haleh Abdizadeh1, Bart M.H.
+                    Bruininks1, Tsjerk A. Wassenaar1, Peter C. Kroon1, Josef Melcr1, Vincent Nieto2, Valentina
+                    Corradi5, Hanif M. Khan5,6, Jan Domański7,8, Matti Javanainen9,10, Hector Martinez-
+Author Manuscript
+
+
+
+
+                    Seara9, Nathalie Reuter6, Robert B. Best8, Ilpo Vattulainen10,11, Luca Monticelli2, Xavier
+                    Periole12,13, D. Peter Tieleman5, Alex H. de Vries1, Siewert J. Marrink*,1
+                    1Groningen Biomolecular Sciences and Biotechnology Institute and Zernike Institute for Advanced
+
+                    Material, University of Groningen, Nijenborgh 7, 9747 AG Groningen, The Netherlands.
+                    2Molecular Microbiology and Structural Biochemistry, UMR 5086 CNRS & University of Lyon, 7
+
+                    Passage du Vercors, F-69367, Lyon, France.
+                    3Intangible Realities Laboratory, University of Bristol, School of Chemistry, Cantock’s Close,
+
+                    Bristol BS8 1TS, United Kingdom.
+                    4Frankfurt Institute for Advanced Studies, Ruth-Moufang-Str. 1, 60438 Frankfurt am Main,
+
+                    Germany.
+                    5Centre for Molecular Simulation and Department of Biological Sciences, University of Calgary,
+Author Manuscript
+
+
+
+
+                    2500 University Drive NW, Calgary, Alberta T2N 1N4, Canada.
+                    6Department of Chemistry and Computational Biology Unit, University of Bergen, N-5020 Bergen,
+
+                    Norway.
+                    7Department of Biochemistry, University of Oxford, South Parks Road, Oxford OX1 3QU, United
+
+                    Kingdom.
+
+
+
+
+                    *
+                     Corresponding authors: Paulo C. T. Souza – paulocts@gmail.com, Siewert J. Marrink – s.j.marrink@rug.nl.
+                    AUTHOR CONTRIBUTIONS
+                    P.C.T.S. and S.J.M. conceived the project with suggestions from R.A., A.H.V., J.B., and S.T.; P.C.T.S. generated and optimized all
+                    bead parameters; P.C.T.S., R.A., and J.B. generated the topology and bonded parameters of all CG models with suggestions from
+Author Manuscript
+
+
+
+
+                    S.T. and I.F.; P.C.T.S., R.A., A.H.V., and F.G. performed the simulations and analysis involving transfer free energies, solvent and
+                    polymer properties; P.C.T.S., S.T., J.B., and J.M. performed the simulations and analysis involving lipid bilayers; P.C.T.S., I.F.,
+                    and R.A. performed the simulations and analysis involving nucleobases; P.C.T.S., I.P., and A.H.V. generated the models, performed
+                    the simulations and analysis involving aedamers; P.C.T.S., and F.G. generated the models, performed the simulations and analysis
+                    involving ionic liquids and ionic water solutions; R.A. generated the models, performed the simulations and analysis involving bulk
+                    heterojunctions, with suggestions from L.M. regarding the fullerene model; P.C.T.S., J.B., H.A., R.A., B.M.H.B., S.T., J.M., V.N.,
+                    X.P., M.J., H.M.K., J.D., V.C., and H.M.-S. performed the simulations and analysis involving amino acids, peptides and proteins; J.B.,
+                    T.W., P.K., and S.T. developed some tools and scripts used to generate the CG models and to run the MD simulations; L.M., R.B.,
+                    P.T., N.R., I.V., A.H.V., and S.J.M. provided guidance and supervision in the studies performed by their respective group members and
+                    collaborators; P.C.T.S. and S.J.M. wrote the main manuscript, with contributions from all the authors; P.C.T.S. prepared the figures
+                    with contributions from R.A., B.M.H.B., H.M.K., and A.H.V.; P.C.T.S. wrote the Methods with contributions from all the authors.
+                    P.C.T.S. wrote the Supplementary Information, with contributions from all the authors. All the authors revised and approved the final
+                    version of the manuscript, Online Methods, and Supplementary Information.
+                    COMPETING INTERESTS
+                    The authors declare no competing interests.
+                    Souza et al.                                                                                                   Page 2
+
+                       8Laboratory of Chemical Physics, National Institute of Diabetes and Digestive and Kidney
+Author Manuscript
+
+
+
+
+                       Diseases, National Institutes of Health, Bethesda, Maryland 20892-0520, United States.
+                       9Institute of Organic Chemistry and Biochemistry, Czech Academy of Sciences, CZ-16610 Prague
+
+                       6, Czech Republic.
+                       10Computational Physics Laboratory, Tampere University, FI-33100 Tampere, Finland.
+
+                       11Department of Physics, University of Helsinki, FI-00014 Helsinki, Finland.
+
+                       12Department of Chemistry, Aarhus University, Aarhus C, Denmark.
+
+                       13School of Biological Sciences, The University of Auckland, Symonds Street 3A, Auckland, New
+
+                       Zealand.
+
+                       Abstract
+Author Manuscript
+
+
+
+
+                             The coarse-grained Martini force field is widely used in biomolecular simulations. Here, we
+                             present the refined model, Martini 3 (http://cgmartini.nl), with an improved interaction balance,
+                             new bead types, and expanded ability to include specific interactions representing, e.g. hydrogen
+                             bonding and electronic polarizability. The new model allows more accurate predictions of
+                             molecular packing and interactions in general, which is exemplified with a vast and diverse set
+                             of applications, ranging from oil/water partitioning and miscibility data to complex molecular
+                             systems, involving protein-protein and protein-lipid interactions and material science applications
+                             as ionic liquids and aedamers.
+
+
+                       INTRODUCTION
+                                       The molecular dynamics (MD) simulation technique has become an indispensable tool
+Author Manuscript
+
+
+
+
+                                       in natural sciences, offering a spatio-temporal resolution unmatched by any experimental
+                                       technique1. A major bottleneck of MD is the limited time and length scales that are
+                                       accessible. To overcome this limitation, coarse-grained (CG) models representing groups
+                                       of atoms by effective beads, have achieved widespread use2. The Martini model is among
+                                       the most popular CG models in the field of biomolecular simulation, due to its easy-to-use
+                                       building block principle. Martini relies on a four-to-one mapping scheme (i.e., on average
+                                       four heavy atoms and associated hydrogens are mapped into one CG bead), and has been
+                                       parametrized using a top-down approach with thermodynamic partitioning data as the main
+                                       target3,4. Non-bonded interactions between neutral beads of Martini are solely described
+                                       by Lennard-Jones (LJ) potentials, while charged beads also include Coulombic interactions.
+                                       The interaction strength of the LJ potential (i.e. its well depth) is used to discriminate
+                                       between different levels of polarity of the CG beads. The model features four main
+Author Manuscript
+
+
+
+
+                                       classes of CG bead types, denoted C, N, P, and Q representing non-polar, intermediately
+                                       polar, polar, and charged chemical groups, respectively4. Sub-labels are used to make a
+                                       further distinction within a class in terms of degree of polarity or hydrogen donor/acceptor
+                                       capabilities. In principle, all beads have the same size, denoted as regular (R) beads. By
+                                       way of exception, special small (S) beads were introduced to model ring-like compounds
+                                       for which a four-to-one mapping scheme is inadequate4. To reproduce correct stacking and
+                                       hydrogen bonding distances between nucleotides, even smaller tiny (T) beads were found
+
+
+
+                                            Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                          Page 3
+
+
+                                   necessary5. Parametrization of the cross-interactions between S- and T-beads with R-beads,
+Author Manuscript
+
+
+
+
+                                   however, was done on an ad-hoc basis.
+
+                                   The Martini force field is used in a wide range of applications in diverse fields including
+                                   structural biology6–8, biophysics9,10, biomedicine11, nanotechnology12,13, and materials
+                                   design14,15. With its growing use, however, a number of shortcomings of the Martini
+                                   model have recently been identified. One of the most important problems is the observation
+                                   that certain molecules tend to interact too strongly. This has been reported for proteins
+                                   and carbohydrates in solution, as well as for membrane embedded proteins16–18. The
+                                   origin lies among others in small but systematic deviations in packing and intermolecular
+                                   interactions19. Besides, the coverage of chemical space for broader applications was uneven,
+                                   and in some cases, such as selectivity of nucleobase pairing5,20, consistency was difficult
+                                   to obtain given the limited bead types and sizes. To alleviate these problems, we undertook
+                                   a rebalancing of all non-bonded interaction terms of the Martini model, including the
+Author Manuscript
+
+
+
+
+                                   addition of new beads and labels. The new version, called Martini 3, enables more accurate
+                                   simulations of molecular systems in general. In this paper, we present the key features of
+                                   Martini 3 combined with examples of new applications and improvements in relation to the
+                                   previous Martini model.
+
+
+                       RESULTS
+                       Re-parametrization of the beads.
+                                   In Martini 3, the new parametrization strategy was based on the construction of prototype
+                                   models of polar and non-polar molecules in all three Martini resolutions. Self- (R-R,
+                                   S-S, and T-T) and cross-interactions (R-S, R-T, and S-T) of the different bead sizes
+                                   were optimized to be well-balanced (Supplementary Notes, sections B1 and B2). In terms
+Author Manuscript
+
+
+
+
+                                   of chemical types, the beads were separated into three blocks: organic, ions, and water
+                                   (Supplementary Notes, section A1). The organic (containing P-, N-, and C-beads) and
+                                   ion (Q-beads) blocks have been subjected to independent parametrizations, where different
+                                   trends in self-interaction, solvation, and transfer free energy upon bead size change were
+                                   included (Supplementary Notes, sections A1, B2, and B3). In contrast to the previous
+                                   version, water is defined as a separate bead type (called W), which enables optimization
+                                   of water properties independently from other targets; for example, the freezing of water at
+                                   room temperature (a problem sometimes encountered with the previous water model) no
+                                   longer occurs. In addition, it is available in three different sizes as well (Supplementary
+                                   Notes, section B4). Together with this optimization strategy, the new Martini 3 model
+                                   also features a fully revised interaction matrix (Supplementary Notes, section A2) and
+                                   new intermediate interaction levels, added to smoothen the transition between chemical
+Author Manuscript
+
+
+
+
+                                   types (Supplementary Notes, section A3). Bead assignment and validation of the models
+                                   were not only based on experimental transfer free energies, but also included solvent
+                                   miscibility data (Supplementary Notes, sections A6 and C2, and Supplementary Results,
+                                   sections E4–E6) and a series of benchmark tests, ranging from structural properties of
+                                   bilayers to dimerization potentials of mean force (PMFs) of proteins (Methods, section 3,
+                                   Supplementary Notes, section B5 and Supplementary Results, sections F1–F5).
+
+
+
+
+                                       Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                                Page 4
+
+
+                                   The improved interaction balance between regular and smaller bead types is illustrated
+Author Manuscript
+
+
+
+
+                                   by the close to ideal mixing behavior of pure solvents composed of molecules mapped
+                                   at different resolutions (Fig. 1A). Integration of radial distribution functions, defined as
+                                   Kirkwood–Buff integrals (Gij), are used here to quantify the degree of miscibility of the
+                                   multi-resolution liquid water model (Fig. 1B). Theoretically, pair differences in Kirkwood–
+                                   Buff integrals (ΔGij ) should be equal to zero for all i,j pairs in ideal mixtures21,22 while real
+                                   mixtures that closely approach ideal behavior (like benzene-toluene) show values around
+                                   ± 1 cm3/mol22. Our multi-resolution water model shows ΔGij ≈ −0.3 cm3/mol, indicating
+                                   that the balance achieved with the new parametrization closely captures an ideal mixing
+                                   behavior.
+
+                                   The accuracy of CG models containing ring or branched fragments, which rely heavily on
+                                   smaller bead types, is also greatly increased in Martini 3. For example, the binary mixing
+                                   behavior of various solvents (Supplementary Results, sections E4–E6) and the transfer free
+Author Manuscript
+
+
+
+
+                                   energies of many linear, branched, and ring-like compounds (Fig 1C and Supplementary
+                                   Results, section E1) are now in very good agreement with experimental data. The mean
+                                   absolute error of transfer free energies compared to the experimental data is 2 kJ/mol, with
+                                   86% of the molecules presenting errors lower than 3 kJ/mol.
+
+                                   Another benefit of the recalibrated interactions is the disappearance of the artificially
+                                   large desolvation free energy barriers that contribute to slow dissociation processes of the
+                                   previous Martini 2 models. The problem, that was initially observed in dimerization of
+                                   nucleobases5,19, is thus solved, as highlighted by the comparison of Martini 2 and Martini
+                                   3 PMFs between cytosine and guanine (left panel of Fig. 1D). Note that there is room
+                                   for further improvement, as the free energy minima of the CG PMF profiles with Martini
+                                   3 are shifted relative to the all-atom profiles because the bead sizes representing nitrogen-
+Author Manuscript
+
+
+
+
+                                   containing groups are not optimal to reproduce hydrogen bonding distances. In addition, the
+                                   difference between C-G and G-G base pairs is not as large as in the atomistic case (~20
+                                   kJ/mol). However, it is still large enough (~8 kJ/mol) to provide specificity.
+
+                                   The proper balancing of R-, S-, and T-beads in Martini 3 also implies that the mapping
+                                   choice of an arbitrary molecule to its Martini representation is now better defined. S- and T-
+                                   beads are not only suited to represent ring-like compounds, but also used for cases involving
+                                   3-to-1 and 2-to-1 mapping of linear and branched chemical groups (Supplementary Notes,
+                                   section C1).
+
+                       Covering the chemical space with new beads and labels.
+                                   Together with a thorough revision of the interaction strengths, in Martini 3, we extend the
+Author Manuscript
+
+
+
+
+                                   number of chemical bead types and the ability to modify the bead properties depending on
+                                   the chemical details of the underlying moieties. Each P-, N-, and C-class now has 6 bead
+                                   types with different degrees of polarity, which enables a more precise definition of different
+                                   chemical groups by assigning them to certain bead types. Additionally, we introduce a
+                                   new X-class of beads to model halo-compounds (Supplementary Notes, section A1). In the
+                                   previous version of Martini, some of the bead types were already sub-classified according
+                                   to their ability to act as hydrogen bond donor, acceptor, or both. This property can be now
+                                   attributed to all bead types of intermediate or polar nature (N- or P- class). The effective
+
+
+                                       Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                            Page 5
+
+
+                                   interaction strength between donor and acceptor pairs is increased, whereas donor-donor
+Author Manuscript
+
+
+
+
+                                   and acceptor-acceptor pairs are weakened (Supplementary Notes, section A4). For example,
+                                   Martini 3 correctly reproduces the trends in hydrogen bond-based pairing of nucleobases5,20
+                                   without the use of special-purpose beads specifically for nucleobases (right panel of Fig.
+                                   1D). Note that chemical groups that can act as both donor and acceptor at the same time are
+                                   always represented by the pure beads of the P- and N-class in Martini 3.
+
+                                   Next to the fine-tuning based on hydrogen bonding capabilities, we introduce the possibility
+                                   to change the interactions based on the electronic polarizability. Depending on inductive
+                                   or conjugate effects caused by chemical functionalization, non-polar molecules can be
+                                   polarized, i.e., they can acquire an electron-donor (or “enriched”, label “e”) or electron-
+                                   acceptor (or “vacancy”, label “v”) character, which can promote preferential interactions.
+                                   Polarizable groups in Martini 3 can be distinguished through the label “e/v” which can
+                                   only be applied to the C- and X-class. A nice example of their application is the strong
+Author Manuscript
+
+
+
+
+                                   and specific interaction between electron donor and electron acceptor aromatic rings in
+                                   aedamers, a class of molecules that have been studied extensively in the context of
+                                   biomimetic folding and self-assembly23,24. The use of “e/v” allows Martini 3 to capture the
+                                   preferential interaction between 1,5-dialkoxynaphthalene (DAN) and naphthalene diimide
+                                   (NDI) (left panel of Fig. 2A) experimentally observed via NMR titration23 and atomistic
+                                   simulation data. Self-assembly of amide-linked tetramers shows preferential formation of
+                                   alternating stacks of DAN and NDI, which is also measured by NMR and isothermal
+                                   titration calorimetry investigations24. On top of hydrogen bonding and electron polarization
+                                   labels, all beads can have their self-interaction fine-tuned by other sub-labels (as further
+                                   described in the Supplementary Notes, section A4).
+
+                                   Chemical groups carrying monovalent charges +1/−1 are represented in Martini by the class
+Author Manuscript
+
+
+
+
+                                   of Q-beads (Supplementary Notes, section A1). The original Martini model only considers
+                                   monovalent ions, and was solely optimized for regular bead sizes which represented small
+                                   ions and their first hydration shell. In Martini 3, charged groups can have either R-, S-, or
+                                   T-size. The tiny size category allows modeling of small, bare ions, enabling applications that
+                                   involve ion binding where (part of) the hydration shell is lost. This feature is exemplified
+                                   by the binding of sodium ions (represented by a charged tiny bead) to a buried small cavity
+                                   localized in the core of the adenosine A2A receptor (Fig. 2B). X-ray crystallographic25 and
+                                   ligand binding assays26 confirm the importance of sodium ions for the structure and for
+                                   the allosteric modulation of the A2A receptor. Note that an extensive validation of the lipid
+                                   models in Martini 3 was performed to allow simulations of transmembrane and peripheral
+                                   membrane proteins (see Supplementary Results, section F1).
+Author Manuscript
+
+
+
+
+                                   In addition to the smaller sizes, the Q-class was also expanded to five bead types,
+                                   following the classical Hofmeister series trend27,28 (Supplementary Notes, section B3
+                                   and Supplementary Results, section F2). At one extreme, the Q5 bead may be used to
+                                   represent hard monovalent ions with the smallest polarizability, e.g. inorganic ions such as
+                                   R2PO4−. At the other end of the Martini Hofmeister series, the Q1 type models polarizable
+                                   soft monovalent ions, like N(CH3)4+, and implicitly includes in the LJ potential ion-π
+                                   interactions. Such differences in behavior of the different Q-bead types are exemplified by
+                                   MD simulations of the anion transfer between aqueous solutions and organophosphonium-
+
+
+                                       Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                             Page 6
+
+
+                                   based ionic liquids (Fig. 2C and Supplementary Results, section F2). Harder ions such
+                                   as Cl− (modeled as TQ5 with −1 charge) tend to stay in the water phase, together with
+Author Manuscript
+
+
+
+
+                                   Na+ ions (TQ5+ bead). In contrast, softer ions like ClO4− (Q2− bead) can exchange with
+                                   Br− (SQ4− bead) or (partially) PF6− (Q1− bead) from the ionic liquid phase. In the case
+                                   of the biphasic system using trihexyltetradecylphosphonium bromide ([P66614][Br]), direct
+                                   comparison to experimental data shows good agreement for the anion transfer trends28,29.
+                                   The new Q-bead types also impact biologically relevant systems, as exemplified by
+                                   preferential cation-π interaction between choline groups (Q1+ bead) of phosphatidylcholine
+                                   lipids and aromatic residues of the Bacillus thuringiensis phosphatidylinositol-specific
+                                   phospholipase C (BtPI-PLC). In the previous version, such specific interaction between
+                                   soft ions and aromatic molecules were solely included in the recently updated polarizable
+                                   Martini implementation30. However, in Martini 3, the different Q-bead types allow easier
+                                   (implicit) incorporation of such interactions without the need for additional partial charges.
+Author Manuscript
+
+
+
+
+                                   On top of the new chemical types, all Q-beads can use the hydrogen-bonding labels (called
+                                   in this case “p/n”). They represent organic charged molecules or fragments, such as R-CH2-
+                                   COO− and R-CH2-NH3+, and also introduce modifications in the Hofmeister trends of the
+                                   pure Q-beads (Supplementary Notes, section A4). Positively charged hydrogen donors (“p”
+                                   label) interact more strongly with non-polar beads, as expected in cation-π interactions. On
+                                   the other hand, negatively charged hydrogen acceptors (“n” label), have stronger interactions
+                                   with neutral polar beads, mimicking the stronger hydrogen-bonds with anions. To complete
+                                   the ion block, we explicitly include a new D-bead for divalent ions (such as Ca2+), which are
+                                   typically hard ions.
+
+                       Improving packing and protein-protein interactions.
+                                   Another change in philosophy with respect to the previous Martini models is the definition
+Author Manuscript
+
+
+
+
+                                   of bonded interactions. Instead of using the center of mass of the mapped chemical groups to
+                                   define the geometry of the molecule, we now use a size-shape concept aimed at preserving
+                                   the volume of molecules in comparison to all-atom reference structures. This choice and
+                                   the proper use of Martini 3 bead sizes (Supplementary Notes, sections C1 and C2) lead
+                                   to more realistic molecular packing. As a consequence, the hydration of protein pockets
+                                   and channels is improved, as illustrated by the Fragaceatoxin C (FraC) nanopore inserted
+                                   in a lipid bilayer (Fig. 3A). The pore of FraC remains open over the whole trajectory in
+                                   Martini 3, as indicated by X-ray crystallography31 and electro-osmotic flow assays32, while
+                                   in Martini 2 it is closed.
+
+                                   Another example of accurate packing is the stacking predictions of thiophene derivatives
+                                   in bulk heterojunction solar cells composed of poly(3-hexyl-thiophene) (P3HT) and phenyl-
+Author Manuscript
+
+
+
+
+                                   C61-butyric acid methyl ester (PCBM) (Fig. 3B). The morphology of these organic solar
+                                   cells is a determinant for high-efficiency devices33. The scattering profiles computed with
+                                   Martini 3 show improved agreement with Martini 3 in relation to P3HT lamellar (peak
+                                   around q≈0.45 Å−1) and stacking (q≈1.65 Å−1) experimental distances33,34.
+
+                                   The use of bonds based on molecular volume and the appropriate choice of chemical
+                                   bead types, sizes, and labels also controls the interaction density of the model, which
+                                   has an important impact on the strength of collective interactions between molecules19.
+
+
+                                       Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                             Page 7
+
+
+                                   In order to test to what extent the changes in non-bonded and bonded interactions reduce
+Author Manuscript
+
+
+
+
+                                   the over-estimated aggregation of proteins, we performed extensive simulations comprised
+                                   of solutions of soluble proteins as well as membrane embedded proteins. These systems
+                                   were simulated under conditions in which proteins do not aggregate and, preferentially,
+                                   stay as monomers. For soluble proteins (Fig. 3C), qualitative tests were performed with
+                                   the headpiece domain of chicken villin35, and the modified and mutated cellulose-binding
+                                   domain from Cellulomonas fimi (EXG-CBM), which is an example of a protein completely
+                                   free of charged side chains that can maintain solubility, stability, and function36. Trends are
+                                   well-captured in Martini 3, with both proteins mainly staying as monomers in pure water
+                                   (with only counter-ions to neutralize the system in the case of villin). The villin headpiece
+                                   showed salting-in behavior (i.e. less aggregation) under addition of 0.4M of NaCl, which
+                                   was also observed for certain soluble proteins at low ionic strengths37. On the other hand,
+                                   EXG-CBM only showed salting-out behavior (i.e. more aggregation), which was expected
+                                   based on experimental data36. In contrast, both proteins aggregate in Martini 2, forming a
+Author Manuscript
+
+
+
+
+                                   single and stable aggregate during the simulation.
+
+                                   Polyleucine (K2-L26-K2) was selected to evaluate the aggregation propensity in membranes.
+                                   Experimental evidence with this transmembrane (TM) protein model indicates a preference
+                                   for the monomeric state in a bilayer environment38–40. Both Martini 2 and 3 show that
+                                   the hydrophobic mismatch between TM length and membrane thickness can play a role in
+                                   the aggregation, with Martini 3 showing a higher percentage of the monomeric state (Fig.
+                                   3D). To quantitatively evaluate the strength of protein-protein interactions in a membrane
+                                   environment, we also considered the dimerization of four selected transmembrane (TM)
+                                   helices: the TM domains of the receptor tyrosine kinases EphA1 and ErbB1; the red
+                                   blood cell protein glycophorin A (GpA); as well as the well-known model peptide
+                                   WALP23 (left panel of Fig. 3E). For EphA1 and ErbB1, experimental dimerization free
+Author Manuscript
+
+
+
+
+                                   energies in a membrane environment have been estimated using Förster resonance energy
+                                   transfer (FRET)41,42. For GpA, dimerization free energies range from around −15 kJ/mol
+                                   (in various cell membrane environments)43,44 to −31.5 kJ/mol (GALLEX assay in E.
+                                   coli inner membranes)45,46 or −50.6 kJ/mol (steric trap in POPC bilayers)47. WALP
+                                   peptides have been characterized thoroughly during the past two decades, including their
+                                   self-association48. For each one of the four peptide dimers, we compared experimental
+                                   dimerization free energies with the free energies predicted by the Martini 2 and Martini 3
+                                   model predictions. Martini 3 shows not only to be able to capture the correct trends, but
+                                   also to quantitatively reproduce the experimental affinities. The binding mode also becomes
+                                   improved as highlighted for GpA (right panel of Fig. 3E). The GpA homodimer structure
+                                   with Martini 3 closely resembles experimental results obtained with NMR spectroscopy and
+                                   crystallography49–51.
+Author Manuscript
+
+
+
+
+                                   In summary, for both soluble and transmembrane proteins, we observed that the Martini 3
+                                   models are in much better agreement with experimental data than before. Another advantage
+                                   of the current Martini 3 protein model is that the default bead type representing the protein
+                                   backbone in Martini 3 (a regular P2 bead) no longer depends on the secondary structure. In
+                                   addition, the representation of protein flexibility can now be improved by the use of Gō-like
+                                   models52.
+
+
+
+                                       Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                            Page 8
+
+
+                       DISCUSSION
+Author Manuscript
+
+
+
+
+                                   In this paper we have described the new version of the Martini force field, which shows
+                                   numerous improvements in relation to the previous version. However, inherent limitations to
+                                   the process of coarse-graining, related to transferability and representability problems53–55
+                                   are still part of the model. An important drawback is the limited structural detail, that is
+                                   a consequence of representing multiple atoms with isotropic interaction sites. This is most
+                                   noticeable for the Martini water model, which represents four water molecules with a single
+                                   LJ site and will certainly not capture any of the higher order structural correlations of real
+                                   water. The role of explicit water in a CG model such as Martini is mostly to provide a good
+                                   solvent for polar compounds resulting in realistic partitioning. For applications requiring
+                                   finer details, structure-based CG models are more suitable56,57. Another fundamental
+                                   limitation is the entropy-enthalpy compensation. The loss of internal degrees of freedom
+                                   for groups of atoms represented by a CG bead inevitably reduces the entropy of the
+Author Manuscript
+
+
+
+
+                                   system. Since the Martini force field is based on reproducing free energies, this requires a
+                                   concomitant reduction in the enthalpy. As consequence, inaccurate entropy-enthalpy balance
+                                   affects the temperature dependence of several properties and reduces the transferability
+                                   to different state points. To probe transferability, we performed temperature dependent
+                                   calculations for a number of solvent systems as well as lipid membranes (Supplementary
+                                   Results F). Temperature dependent properties, like the heat expansion coefficient and heat
+                                   capacity of water and n-octane, are very well captured by Martini 3, but this is not true for
+                                   the hydrophobic effect, that shows the opposite trend with respect to atomistic models, in
+                                   line with previous findings58. Note that the use of higher-resolution S- or T- particles does
+                                   not remedy this problem, as these bead types were parameterized mainly to be compatible
+                                   with the regular (R-type) beads and should be used primarily to represent parts of the system
+                                   that cannot be adequately mapped with R-particles. Potential improvements with respect
+Author Manuscript
+
+
+
+
+                                   to the temperature transferability of our model could make use of environment dependent
+                                   potentials59 or CG beads with embedded sites, such as the polarizable water models60,61,
+                                   where incorporation of quadrupole moment might be required58. Bottom-up CG models that
+                                   are derived with minimization of the information loss54 as parameterization target might also
+                                   perform better. For a more in depth discussion of these and related issues with respect to the
+                                   Martini coarse-graining philosophy, we refer to previous papers62,63.
+
+                                   Keeping these limitations in mind, Martini 3 offers a versatile and easy to use generic force
+                                   field to simulate molecular processes at a semi-quantitative level of accuracy. In relation
+                                   to the previous model, the excessive over-estimated aggregation19 is substantially reduced.
+                                   We expect that Martini 3 will allow for more realistic predictions of protein interactions, as
+                                   well as more accurate simulations of molecular systems in general. The increased number of
+Author Manuscript
+
+
+
+
+                                   bead types and interaction levels makes the model even more versatile, covering a larger part
+                                   of chemical space with appropriate building blocks. Based on this new foundation, further
+                                   optimizations for different classes of molecules are currently ongoing, including the use of
+                                   Gō-potentials to alleviate limitations of protein conformational flexibility, a re-optimization
+                                   of the bonded potentials of lipids and other biomolecular classes, as well as a compatible
+                                   polarizable water model for applications requiring more realistic screening of electrostatic
+
+
+
+
+                                       Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                              Page 9
+
+
+                                     interactions. Finally, we foresee new application horizons for the Martini model in the field
+                                     of materials science64,65 and high-throughput drug design66.
+Author Manuscript
+
+
+
+
+                       ONLINE CONTENT
+                                     Methods, including statements of data and code availability, supplementary information, and
+                                     any other associated content and references, are available in the online version of the paper
+                                     at https://doi.org/10.1038/sXXXXX-XXX-XXXX-X.
+
+
+                       ONLINE METHODS
+                       1)    CG models
+                                     CG mappings of small molecules were initially inspired by the standard Martini 2 models,
+                                     when they were available. Due to the well-balanced properties of the regular (R), small
+Author Manuscript
+
+
+
+
+                                     (S), and tiny (T) beads in Martini 3, the CG models now follow more specific rules
+                                     for mapping. For instance, over-representing 3-to-1 or 2-to-1 fragments by the usage of
+                                     R-beads is always avoided. Aromatic rings without substituents are composed of T-beads
+                                     and, in case of substituents, S-beads are used. Aliphatic rings without substituents are
+                                     usually based on S-beads, which better reproduce their molecular shape. More technical
+                                     details about the mapping rules and bead types used are given in the Supplementary Notes,
+                                     sections C1 and C3. As in the previous version of Martini5,20,67–69, bonded parameters are
+                                     based on atomistic simulations or high-resolution experimental data. The main difference
+                                     in Martini 3 lies in the protocol to derive bond lengths, which are now based on matching
+                                     overall volume and shape of the molecules (Supplementary Notes, section C2). In this
+                                     spirit, the bonded parameters of the protein models were also slightly modified from the
+                                     standard Martini 2.2 values68,70, including the addition of side chain corrections71, based
+Author Manuscript
+
+
+
+
+                                     on experimental reference structures. Backbone bead types do not depend on the secondary
+                                     structure anymore, but are now represented by P2 beads, except for proline (SP1a), alanine
+                                     (SP2, with an additional bead for the side chain) and glycine (SP1). Adapted versions of
+                                     Gō-like models72 or Elastic Networks73 were used to maintain the tertiary protein structure.
+                                     All CG protein models were constructed using Martinize2, described in Supplementary
+                                     Codes, section H1. Lipid mapping was inspired by the previous Martini model74–77, but
+                                     now following the Martini 3 rules for mapping and also with adaptations in the bonded
+                                     parameters inspired by the “extensible model” of Carpenter et al.78.
+
+                       2)    General setup for CG MD simulations and Analysis
+                                     Settings for the CG simulations followed, in general, the “new” Martini set of simulation
+                                     parameters79 using the leap-frog algorithm80 for integrating the equations of motion. The
+Author Manuscript
+
+
+
+
+                                     Verlet neighbor search algorithm81 is used to update the neighbor list every 20 steps with
+                                     a buffer tolerance of 0.005 kJ·mol−1·ps−1. For the Lennard-Jones terms, we used a cutoff
+                                     scheme with a value of 1.1 nm and the Verlet cutoff scheme82 for the potential-shift. Long
+                                     range electrostatic interactions were treated with reaction field83 or Particle Mesh Ewald
+                                     (PME)84, with relative permittivity set to ϵr = 15 and a cutoff value of 1.1 nm. Reaction
+                                     field was used for most of the systems, except the ones explicitly mentioning PME. Periodic
+                                     boundary conditions were used in all three dimensions. For the production simulations, the
+
+
+
+                                         Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                                                 Page 10
+
+
+                                     velocity rescaling thermostat85 (coupling time constant of 1.0 ps) and the Parrinello-Rahman
+                                     barostat86 (coupling time constant of 12.0 ps) were employed to maintain temperature
+Author Manuscript
+
+
+
+
+                                     and pressure, respectively. Except for equilibration runs, a time step of 20 fs was used
+                                     for all systems. CG simulation settings are available as input files for GROMACS on the
+                                     Martini portal http://cgmartini.nl. GROMACS 2016.x and 2018.x were used to run all the
+                                     MD simulations87,88. For automated running and managing the Martini 3 simulations, we
+                                     provide an updated version of Martinate89,90, described in Supplementary Codes, section
+                                     H2. All the analysis were performed using gmx analysis tools (GROMACS 2016 and
+                                     2018)87,88, VMD 1.9.4a1291, xmgrace (5.1.25) and MDAnalysis92. The graphs were plotted
+                                     using Excel 2016, xmgrace (5.1.25) and gnuplot (5.2). Figures were compiled using VMD
+                                     1.9.4a12 and Inkscape 1.1.
+
+                       3)    Parameter calibration, tests and validation
+Author Manuscript
+
+
+
+
+                                     In order to parametrize the LJ parameters of single beads and also test the Martini 3 CG
+                                     models, many molecular systems and methods were used in this work. The overall iterative
+                                     approach was not based in rigorous separation of calibration and validation groups. As
+                                     Martini is based on pair interactions, it is hard to find simple systems that cover enough
+                                     points in the interaction matrix for all bead size combinations. So, complex systems are
+                                     not only used for validation but can be part of the calibration. The tests performed were
+                                     separated in “tiers”, which represent systems with different level of complexity. In “tier
+                                     0”, isolate beads and simple-molecules are mainly used for calibration of LJ parameters,
+                                     with balance of different bead sizes and thermodynamics data (e.g. liquid-liquid partitioning
+                                     and miscibility) used as main targets. In the intermediate “tier 1”, bilayer properties are
+                                     checked, together with qualitative tests, applied to systems like soluble and transmembrane
+                                     proteins. These qualitative tests are designed as “yes-or-no” questions to evaluate the overall
+Author Manuscript
+
+
+
+
+                                     quality of the force field. At the same time, some points in the interaction matrix were
+                                     also tested and fine-tuned here. In the final “tier 2”, quantitative tests involving complex
+                                     systems are performed, including comparisons with experimental or atomistic simulation
+                                     data. Here most of the system are considered validation. For a complete overview of the
+                                     parametrization strategy used, see the Supplementary Notes, section B. The Supplementary
+                                     Notes, section D provide details of the specific systems and methods used in the tests
+                                     performed to parametrize and validate the new Martini 3 LJ parameters. Further information
+                                     on research design is available in the Life Sciences Reporting Summary linked to this article.
+
+
+                       Supplementary Material
+                                     Refer to Web version on PubMed Central for supplementary material.
+Author Manuscript
+
+
+
+
+                       ACKNOWLEDGMENTS
+                                     We thank all members of the S.J.M. group and also external users for testing Martini 3 in its open-beta version. In
+                                     particular, we would like to thank C.F.E. Schroer, P.W.J.M. Frederix, W. Pezeshkian, M.N. Melo, H.I. Ingólfsson,
+                                     M. Tsanai, M. König, P. A. Vainikka, T. Zijp, L. Gaifas, J.H. van der Woude, M. Espinoza Cangahuala, M. Scharte,
+                                     J. Cruiming, L.M. van der Sleen, V. Verduijn, A.H. Beck Frederiksen, B. Schiøtt, M. Sikora, P. Schmalhorst, K.
+                                     Pluhackova, C. Arnarez, C.A. López, E. Jefferys, and M.S.P. Sansom for their preliminary tests with a lot of
+                                     different systems including aedamers, sugars, amino acids, deep eutectic solvents, lipids, peptides, and proteins.
+                                     We also thank the Center for Information Technology of the University of Groningen for providing access to the
+                                     Peregrine high-performance computing cluster. We acknowledge the National Computing Facilities Foundation
+
+
+
+                                          Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                                              Page 11
+
+                                   (NCF) of The Netherlands Organization for Scientific Research (NWO), CSC – IT Center for Science Ltd (Espoo,
+                                   Finland), and CINES (France) for providing computing time. Work in the S.J.M. group was supported by an ERC
+Author Manuscript
+
+
+
+
+                                   Advanced Grant “COMP-MICR-CROW-MEM”. R.A. thanks The Netherlands Organisation for Scientific Research
+                                   NWO (Graduate Programme Advanced Materials, No. 022.005.006) for financial support. L.M. acknowledges
+                                   the Institut National de la Santé et de la Recherche Medicale (INSERM) and the Agence Nationale de la
+                                   Recherche (ANR) for funding (grant no. ANR-17-CE11–0003) and GENCI-CINES for computing time (grant
+                                   no. A0060710138). S.T. acknowledges the support from the European Commission via a Marie Skłodowska-
+                                   Curie Actions individual fellowship (MicroMod-PSII, grant agreement 748895). M.J. thanks the Emil Aaltonen
+                                   foundation for financial support. I.V. thanks the Academy of Finland (Center of Excellence program (grant no.
+                                   307415)), Sigrid Juselius Foundation, the Helsinki Institute of Life Science fellow program, and the HFSP (research
+                                   grant Ref.-No: RGP0059/2019). R.B. and J.D. were supported by the intramural research program of the NIDDK,
+                                   NIH. Their work utilized the computational resources of the NIH HPC Biowulf cluster. (http://hpc.nih.gov).
+                                   H.M.-S. acknowledges the Czech Science Foundation (19–19561S). J.B. acknowledges funding from the TOP grant
+                                   of S.J.M. (NWO) and the EPSRC program grant EP/P021123/1. Work in D.P.T.’s group is supported by the Natural
+                                   Sciences and Engineering Research Council (Canada) and Compute Canada, funded by the Canada Foundation for
+                                   Innovation. D.P.T. acknowledges further support from the Canada Research Chairs program.
+
+
+                       DATA AVAILABILITY
+Author Manuscript
+
+
+
+
+                                   Force-field parameters and procedures (e.g. tutorials) are publicly available at http://
+                                   cgmartini.nl. Simulation Data (e.g. trajectories) supporting the results of this paper are
+                                   available from the corresponding authors upon reasonable request.
+
+
+                       CODE AVAILABILITY
+                                   Martinize2 (for which the manuscript is in preparation) and Martinate codes used in
+                                   this work are publicly available at https://github.com/marrink-lab/. For a more detailed
+                                   information, see Supplementary Codes, section H.
+
+
+                       REFERENCES
+                                   1. Bottaro S & Lindorff-Larsen K Biophysical experiments and biomolecular simulations: A perfect
+Author Manuscript
+
+
+
+
+                                      match? Science 361, 355–360 (2018). [PubMed: 30049874]
+                                   2. Ingólfsson HI et al. The power of coarse graining in biomolecular simulations. Wiley Interdiscip.
+                                      Rev. Comput. Mol. Sci. 4, 225–248 (2014). [PubMed: 25309628]
+                                   3. Marrink SJ, De Vries AH & Mark AE Coarse Grained Model for Semiquantitative Lipid
+                                      Simulations. J. Phys. Chem. B 108, 750–760 (2004).
+                                   4. Marrink SJ, Risselada HJ, Yefimov S, Tieleman DP & de Vries AH The MARTINI force field:
+                                      coarse grained model for biomolecular simulations. J. Phys. Chem. B 111, 7812–7824 (2007).
+                                      [PubMed: 17569554]
+                                   5. Uusitalo JJ, Ingólfsson HI, Akhshi P, Tieleman DP & Marrink SJ Martini Coarse-Grained Force
+                                      Field: Extension to DNA. J. Chem. Theory Comput. 11, 3932–3945 (2015). [PubMed: 26574472]
+                                   6. Abellón-Ruiz J et al. Structural basis for maintenance of bacterial outer membrane lipid asymmetry.
+                                      Nat. Microbiol. 2, 1616–1623 (2017). [PubMed: 29038444]
+                                   7. Yen HY et al. PtdIns(4,5)P2 stabilizes active states of GPCRs and enhances selectivity of G-protein
+                                      coupling. Nature 559, 423–427 (2018). [PubMed: 29995853]
+Author Manuscript
+
+
+
+
+                                   8. Van Eerden FJ, Melo MN, Frederix PWJM, Periole X & Marrink SJ Exchange pathways of
+                                      plastoquinone and plastoquinol in the photosystem II complex. Nat. Commun. 8, 15214 (2017).
+                                      [PubMed: 28489071]
+                                   9. Vögele M, Köfinger J & Hummer G Hydrodynamics of Diffusion in Lipid Membrane Simulations.
+                                      Phys. Rev. Lett. 120, (2018).
+                                   10. Agostino MD, Risselada HJ, Lürick A, Ungermann C & Mayer A A tethering complex drives the
+                                        terminal stage of SNARE-dependent membrane fusion. Nature 551, 634–638 (2017). [PubMed:
+                                        29088698]
+
+
+
+
+                                        Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                                  Page 12
+
+
+                                   11. Jeena MT et al. Mitochondria localization induced self-assembly of peptide amphiphiles for
+                                       cellular dysfunction. Nat. Commun. 8, 26 (2017). [PubMed: 28638095]
+Author Manuscript
+
+
+
+
+                                   12. Jiang Z et al. Subnanometre ligand-shell asymmetry leads to Janus-like nanoparticle membranes.
+                                       Nat. Mater. 14, 912–917 (2015). [PubMed: 26053763]
+                                   13. Maingi V et al. Stability and dynamics of membrane-spanning DNA nanopores. Nat. Commun. 8,
+                                       14784 (2017). [PubMed: 28317903]
+                                   14. Frederix PWJM et al. Exploring the sequence space for (tri-)peptide self-assembly to design and
+                                       discover new hydrogels. Nat. Chem. 7, 30–37 (2015). [PubMed: 25515887]
+                                   15. Bochicchio D, Salvalaglio M & Pavan GM Into the dynamics of a supramolecular polymer at
+                                       submolecular resolution. Nat. Commun. 8, 147 (2017). [PubMed: 28747661]
+                                   16. Stark AC, Andrews CT & Elcock AH Toward optimized potential functions for protein-protein
+                                       interactions in aqueous solutions: osmotic second virial coefficient calculations using the
+                                       MARTINI coarse-grained force field. J. Chem. Theory Comput. 9, 4176–4185 (2013).
+                                   17. Javanainen M, Martinez-Seara H & Vattulainen I Excessive aggregation of membrane proteins in
+                                       the Martini model. PLoS One 12, e0187936 (2017). [PubMed: 29131844]
+                                   18. Schmalhorst PS, Deluweit F, Scherrers R, Heisenberg C-P & Sikora M Overcoming the
+Author Manuscript
+
+
+
+
+                                       Limitations of the MARTINI Force Field in Simulations of Polysaccharides. J. Chem. Theory
+                                       Comput. 13, 5039–5053 (2017). [PubMed: 28787166]
+                                   19. Alessandri R et al. Pitfalls of the Martini Model. J. Chem. Theory Comput. 15, 5448–5460 (2019).
+                                       [PubMed: 31498621]
+                                   20. Uusitalo JJ, Ingólfsson HI, Marrink SJ & Faustino I Martini Coarse-Grained Force Field:
+                                       Extension to RNA. Biophys. J. 113, 246–256 (2017). [PubMed: 28633759]
+                                   21. Ben-Naim A Molecular theory of solutions. (Oxford University Press, 2006).
+                                   22. Ploetz EA, Bentenitis N & Smith PE Kirkwood-Buff integrals for ideal solutions. J. Chem. Phys.
+                                       132, 164501 (2010). [PubMed: 20441282]
+                                   23. Zych AJ & Iverson BL Synthesis and Conformational Characterization of Tethered, Self-
+                                       Complexing 1,5-Dialkoxynaphthalene/1,4,5,8-Naphthalenetetracarboxylic Diimide Systems. J.
+                                       Am. Chem. Soc. 122, 8898–8909 (2000).
+                                   24. Gabriel GJ & Iverson BL Aromatic oligomers that form hetero duplexes in aqueous solution. J.
+                                       Am. Chem. Soc. 124, 15174–15175 (2002). [PubMed: 12487583]
+Author Manuscript
+
+
+
+
+                                   25. Liu W et al. Structural basis for allosteric regulation of GPCRs by sodium ions. Science 337,
+                                       232–236 (2012). [PubMed: 22798613]
+                                   26. Gao ZG & Ijzerman AP Allosteric modulation of A(2A) adenosine receptors by amiloride
+                                       analogues and sodium ions. Biochem. Pharmacol. 60, 669–676 (2000). [PubMed: 10927025]
+                                   27. Okur HI et al. Beyond the Hofmeister Series: Ion-Specific Effects on Proteins and Their Biological
+                                       Functions. J. Phys. Chem. B 121, 1997–2014 (2017). [PubMed: 28094985]
+                                   28. Dupont D, Depuydt D & Binnemans K Overview of the Effect of Salts on Biphasic Ionic Liquid/
+                                       Water Solvent Extraction Systems: Anion Exchange, Mutual Solubility, and Thermomorphic
+                                       Properties. J. Phys. Chem. B 119, 6747–6757 (2015). [PubMed: 25978001]
+                                   29. Naert P, Rabaey K & Stevens CV Ionic liquid ion exchange: Exclusion from strong interactions
+                                       condemns cations to the most weakly interacting anions and dictates reaction equilibrium. Green
+                                       Chem. 20, 4277–4286 (2018).
+                                   30. Khan HM et al. Capturing Choline-Aromatics Cation-πInteractions in the MARTINI Force Field.
+                                       J. Chem. Theory Comput. 16, 2550–2560 (2020). [PubMed: 32096995]
+Author Manuscript
+
+
+
+
+                                   31. Tanaka K, Caaveiro JMM, Morante K, González-Manãs JM & Tsumoto K Structural basis for
+                                       self-assembly of a cytolytic pore lined by protein and lipid. Nat. Commun. 6, 6337 (2015).
+                                       [PubMed: 25716479]
+                                   32. Huang G, Willems K, Soskine M, Wloka C & Maglia G Electro-osmotic capture and ionic
+                                       discrimination of peptide and protein biomarkers with FraC nanopores. Nat. Commun. 8, 935
+                                       (2017). [PubMed: 29038539]
+                                   33. Alessandri R, Uusitalo JJ, De Vries AH, Havenith RWA & Marrink SJ Bulk Heterojunction
+                                       Morphologies with Atomistic Resolution from Coarse-Grain Solvent Evaporation Simulations. J.
+                                       Am. Chem. Soc. 139, 3697–3705 (2017). [PubMed: 28209056]
+
+
+
+                                       Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                                   Page 13
+
+
+                                   34. Chiu MY, Jeng US, Su CH, Liang KS & Wei KH Simultaneous use of small- and wide-angle X-ray
+                                       techniques to analyze nanometerscale phase separation in polymer heterojunction solar cells. Adv.
+Author Manuscript
+
+
+
+
+                                       Mater. 20, 2573–2578 (2008).
+                                   35. Petrov D & Zagrovic B Are Current Atomistic Force Fields Accurate Enough to Study Proteins in
+                                       Crowded Environments? PLoS Comput. Biol. 10, e1003638 (2014). [PubMed: 24854339]
+                                   36. Højgaard C et al. A Soluble, Folded Protein without Charged Amino Acid Residues. Biochemistry
+                                       55, 3949–3956 (2016). [PubMed: 27307139]
+                                   37. Ruckenstein E & Shulgin IL Effect of salts and organic additives on the solubility of proteins in
+                                       aqueous solutions. Advances in Colloid and Interface Science 123–126, 97–103 (2006).
+                                   38. Zhou FX, Cocco MJ, Russ WP, Brunger AT & Engelman DM Interhelical hydrogen bonding
+                                       drives strong interactions in membrane proteins. Nat. Struct. Biol. 7, 154–160 (2000). [PubMed:
+                                       10655619]
+                                   39. Zhou FX, Merianos HJ, Brunger AT & Engelman DM Polar residues drive association of
+                                       polyleucine transmembrane helices. Proc. Natl. Acad. Sci. U. S. A. 98, 2250–2255 (2001).
+                                       [PubMed: 11226225]
+                                   40. Grau B et al. The role of hydrophobic matching on transmembrane helix packing in cells. Cell
+Author Manuscript
+
+
+
+
+                                       Stress 1, 90–106 (2017). [PubMed: 31225439]
+                                   41. Chen L, Merzlyakov M, Cohen T, Shai Y & Hristova K Energetics of ErbB1 transmembrane
+                                       domain dimerization in lipid bilayers. Biophys. J. 96, 4622–4630 (2009). [PubMed: 19486684]
+                                   42. Artemenko EO, Egorova NS, Arseniev AS & Feofanov AV Transmembrane domain of EphA1
+                                       receptor forms dimers in membrane-like environment. Biochim. Biophys. Acta 1778, 2361–7
+                                       (2008). [PubMed: 18590698]
+                                   43. Sarabipour S & Hristova K Glycophorin A transmembrane domain dimerization in plasma
+                                       membrane vesicles derived from CHO, HEK 293T, and A431 cells. Biochim. Biophys. Acta -
+                                       Biomembr. 1828, 1829–1833 (2013).
+                                   44. Chen L, Novicky L, Merzlyakov M, Hristov T & Hristova K Measuring the Energetics of
+                                       Membrane Protein Dimerization in Mammalian Membranes. J. Am. Chem. Soc. 132, 3628–3635
+                                       (2010). [PubMed: 20158179]
+                                   45. Nash A, Notman R & Dixon AM De novo design of transmembrane helix-helix interactions and
+                                       measurement of stability in a biological membrane. Biochim. Biophys. Acta - Biomembr. 1848,
+Author Manuscript
+
+
+
+
+                                       1248–1257 (2015).
+                                   46. Finger C et al. The Stability of Transmembrane Helix Interactions Measured in a Biological
+                                       Membrane. J. Mol. Biol. 358, 1221–1228 (2006). [PubMed: 16574146]
+                                   47. Hong H, Blois TM, Cao Z & Bowie JU Method to measure strong protein-protein interactions
+                                       in lipid bilayers using a steric trap. Proc. Natl. Acad. Sci. U. S. A. 107, 19802–19807 (2010).
+                                       [PubMed: 21041662]
+                                   48. Sparr E et al. Self-association of transmembrane α-helices in model membranes: Importance of
+                                       helix orientation and role of hydrophobic mismatch. J. Biol. Chem. 280, 39324–39331 (2005).
+                                       [PubMed: 16169846]
+                                   49. MacKenzie KR, Prestegard JH & Engelman DM Transmembrane helix dimer: Structure and
+                                       implications. Science (80-. ). 276, 131–133 (1997).
+                                   50. Trenker R, Call ME & Call MJ Crystal Structure of the Glycophorin A Transmembrane Dimer in
+                                       Lipidic Cubic Phase. J. Am. Chem. Soc. 137, 15676–15679 (2015). [PubMed: 26642914]
+                                   51. Domański J, Sansom MSP, Stansfeld PJ & Best RB Balancing Force Field Protein–Lipid
+                                       Interactions To Capture Transmembrane Helix–Helix Association. J. Chem. Theory Comput. 14,
+Author Manuscript
+
+
+
+
+                                       1706–1715 (2018). [PubMed: 29424543]
+                                   52. Souza PCT, Thallmair S, Marrink SJ & Mera-Adasme R An Allosteric Pathway in Copper, Zinc
+                                       Superoxide Dismutase Unravels the Molecular Mechanism of the G93A Amyotrophic Lateral
+                                       Sclerosis-Linked Mutation. J. Phys. Chem. Lett. 10, 7740–7744 (2019). [PubMed: 31747286]
+                                   53. Brini E et al. Systematic coarse-graining methods for soft matter simulations-a review. Soft Matter
+                                       9, 2108–2119 (2013).
+                                   54. Foley TT, Shell MS & Noid WG The impact of resolution upon entropy and information in
+                                       coarse-grained models. J. Chem. Phys. 143, 243104 (2015). [PubMed: 26723589]
+
+
+
+                                       Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                                 Page 14
+
+
+                                   55. Wagner JW, Dama JF, Durumeric AEP & Voth GA On the representability problem and the
+                                       physical meaning of coarse-grained models. J. Chem. Phys. 145, 044108 (2016). [PubMed:
+Author Manuscript
+
+
+
+
+                                       27475349]
+                                   56. Wörner SJ, Bereau T, Kremer K & Rudzinski JF Direct route to reproducing pair distribution
+                                       functions with coarse-grained models via transformed atomistic cross correlations. J. Chem. Phys.
+                                       151, 244110 (2019). [PubMed: 31893905]
+                                   57. Noid WG, Chu JW, Ayton GS & Voth GA Multiscale coarse-graining and structural correlations:
+                                       Connections to liquid-state theory. J. Phys. Chem. B 111, 4116–4127 (2007). [PubMed: 17394308]
+                                   58. Wu Z, Cui Q & Yethiraj A Driving force for the association of hydrophobic peptides: The
+                                       importance of electrostatic interactions in coarse-grained water models. J. Phys. Chem. Lett. 2,
+                                       1794–1798 (2011).
+                                   59. Jin J, Yu A & Voth GA Temperature and Phase Transferable Bottom-up Coarse-Grained Models. J.
+                                       Chem. Theory Comput. (2020). doi:10.1021/acs.jctc.0c00832
+                                   60. Yesylevskyy SO, Schäfer LV, Sengupta D & Marrink SJ Polarizable water model for the coarse-
+                                       grained MARTINI force field. PLoS Comput. Biol. 6, e1000810 (2010). [PubMed: 20548957]
+                                   61. Michalowsky J, Schäfer LV, Holm C & Smiatek J A refined polarizable water model for the
+Author Manuscript
+
+
+
+
+                                       coarse-grained MARTINI force field with long-range electrostatic interactions. J. Chem. Phys.
+                                       146, 054501 (2017). [PubMed: 28178817]
+                                   62. Marrink SJ & Tieleman DP Perspective on the Martini model. Chem. Soc. Rev. 42, 6801–22
+                                       (2013). [PubMed: 23708257]
+                                   63. Bruininks BMH, Souza PCT & Marrink SJ A Practical View of the Martini Force Field. in
+                                       Methods in Molecular Biology 2022, 105–127 (Humana Press Inc., 2019). [PubMed: 31396901]
+                                   64. Liu J et al. Enhancing Molecular n-Type Doping of Donor-Acceptor Copolymers by Tailoring Side
+                                       Chains. Adv. Mater. 30, 1704630 (2018).
+                                   65. Vazquez-Salazar LI, Selle M, de Vries A, Marrink SJ & Souza PCT Martini coarse-grained models
+                                       of imidazolium-based ionic liquids: from nanostructural organization to liquid-liquid extraction.
+                                       Green Chem. 22, 7376–7386 (2020).
+                                   66. Souza PCT et al. Protein–ligand binding with the coarse-grained Martini model. Nat. Commun. 11,
+                                       1–11 (2020). [PubMed: 31911652]
+                                   67. López CA et al. Martini Coarse-Grained Force Field: Extension to Carbohydrates. J. Chem. Theory
+Author Manuscript
+
+
+
+
+                                       Comput. 5, 3195–3210 (2009). [PubMed: 26602504]
+                                   68. Monticelli L et al. The MARTINI Coarse-Grained Force Field: Extension to Proteins. J. Chem.
+                                       Theory Comput. 4, 819–834 (2008). [PubMed: 26621095]
+                                   69. Grunewald F, Rossi G, de Vries AH, Marrink SJ & Monticelli L Transferable MARTINI Model of
+                                       Poly(ethylene Oxide). J. Phys. Chem. B 122, 7436–7449 (2018). [PubMed: 29966087]
+                                   70. de Jong DH et al. Improved Parameters for the Martini Coarse-Grained Protein Force Field. J.
+                                       Chem. Theory Comput. 9, 687–97 (2013). [PubMed: 26589065]
+                                   71. Herzog FA, Braun L, Schoen I & Vogel V Improved Side Chain Dynamics in MARTINI
+                                       Simulations of Protein–Lipid Interfaces. J. Chem. Theory Comput. 12, 2446–2458 (2016).
+                                       [PubMed: 27042944]
+                                   72. Poma AB, Cieplak M & Theodorakis PE Combining the MARTINI and Structure-Based Coarse-
+                                       Grained Approaches for the Molecular Dynamics Studies of Conformational Transitions in
+                                       Proteins. J. Chem. Theory Comput. 13, 1366–1374 (2017). [PubMed: 28195464]
+                                   73. Periole X, Cavalli M, Marrink S-J & Ceruso MA Combining an Elastic Network With a Coarse-
+                                       Grained Molecular Force Field: Structure, Dynamics, and Intermolecular Recognition. J. Chem.
+Author Manuscript
+
+
+
+
+                                       Theory Comput. 5, 2531–2543 (2009). [PubMed: 26616630]
+                                   74. Marrink SJ, Risselada HJ, Yefimov S, Tieleman DP & de Vries AH The MARTINI force field:
+                                       coarse grained model for biomolecular simulations. J. Phys. Chem. B 111, 7812–7824 (2007).
+                                       [PubMed: 17569554]
+                                   75. Wassenaar TA, Ingólfsson HI, Böckmann RA, Tieleman DP & Marrink SJ Computational
+                                       Lipidomics with insane : A Versatile Tool for Generating Custom Membranes for Molecular
+                                       Simulations. J. Chem. Theory Comput. 11, 2144–2155 (2015). [PubMed: 26574417]
+                                   76. Melo MN, Ingólfsson HI & Marrink SJ Parameters for Martini sterols and hopanoids based on a
+                                       virtual-site description. J. Chem. Phys. 143, 243152 (2015). [PubMed: 26723637]
+
+
+                                       Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                               Page 15
+
+
+                                   77. López CA, Sovova Z, van Eerden FJ, de Vries AH & Marrink SJ Martini Force Field Parameters
+                                       for Glycolipids. J. Chem. Theory Comput. 9, 1694–1708 (2013). [PubMed: 26587629]
+Author Manuscript
+
+
+
+
+                                   78. Carpenter TS et al. Capturing Phase Behavior of Ternary Lipid Mixtures with a Refined
+                                       Martini Coarse-Grained Force Field. J. Chem. Theory Comput. 14, 6050–6062 (2018). [PubMed:
+                                       30253091]
+                                   79. de Jong DH, Baoukina S, Ingólfsson HI & Marrink SJ Martini straight: Boosting performance
+                                       using a shorter cutoff and GPUs. Comput. Phys. Commun. 199, 1–7 (2016).
+                                   80. Hockney RW, Goel SP & Eastwood JW Quiet high-resolution computer models of a plasma. J.
+                                       Comput. Phys. 14, 148–158 (1974).
+                                   81. Páll S & Hess B A flexible algorithm for calculating pair interactions on SIMD architectures.
+                                       Comput. Phys. Commun. 184, 2641–2650 (2013).
+                                   82. Verlet L Computer ‘experiments’ on classical fluids. I. Thermodynamical properties of Lennard-
+                                       Jones molecules. Phys. Rev. 159, 98–103 (1967).
+                                   83. Tironi IG, Sperb R, Smith PE & Van Gunsteren WF A generalized reaction field method for
+                                       molecular dynamics simulations. J. Chem. Phys. 102, 5451–5459 (1995).
+                                   84. Essmann U et al. A smooth particle mesh Ewald method. J. Chem. Phys. 103, 8577–8593 (1995).
+Author Manuscript
+
+
+
+
+                                   85. Bussi G, Donadio D & Parrinello M Canonical sampling through velocity rescaling. J. Chem. Phys.
+                                       126, 014101 (2007). [PubMed: 17212484]
+                                   86. Parrinello M & Rahman A Polymorphic transitions in single crystals: A new molecular dynamics
+                                       method. J. Appl. Phys. 52, 7182–7190 (1981).
+                                   87. Abraham MJ et al. GROMACS: High performance molecular simulations through multi-level
+                                       parallelism from laptops to supercomputers. SoftwareX 1–2, 19–25 (2015).
+                                   88. Van Der Spoel D et al. GROMACS: Fast, flexible, and free. J. Comput. Chem. 26, 1701–1718
+                                       (2005). [PubMed: 16211538]
+                                   89. Wassenaar TA, Ingólfsson HI, Prieß M, Marrink SJ & Schäfer LV Mixing MARTINI: Electrostatic
+                                       coupling in hybrid atomistic-coarse-grained biomolecular simulations. J. Phys. Chem. B 117,
+                                       3516–3530 (2013). [PubMed: 23406326]
+                                   90. Wassenaar TA et al. High-Throughput Simulations of Dimer and Trimer Assembly of Membrane
+                                       Proteins. The DAFT Approach. J. Chem. Theory Comput. 11, 2278–91 (2015). [PubMed:
+                                       26574426]
+Author Manuscript
+
+
+
+
+                                   91. Humphrey W, Dalke A and Schulten K VMD - Visual Molecular Dynamics. J. Molec. Graph. 14,
+                                       33–38 (1996). [PubMed: 8744570]
+                                   92. Gowers RJ et al. MDAnalysis: A Python Package for the Rapid Analysis of Molecular Dynamics
+                                       Simulations. In Proc. 15th Python Sci. Conference 98–105 (2016).
+Author Manuscript
+
+
+
+
+                                       Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                           Page 16
+Author Manuscript
+Author Manuscript
+
+
+
+
+                                   Figure 1: Rebalancing R-, S-, and T-beads –
+                                   (A) Snapshots of simulation boxes containing mixtures of dodecane and water in three
+                                   resolutions. (B) Radial distribution functions (gij) for all bead combinations in the multi-
+                                   resolution mixture of water. (C) Water-oil transfer free energies (ΔG) computed for
+                                   around 260 data points using Martini 3. (D) Hydrogen bonding potential of mean force
+Author Manuscript
+
+
+
+
+                                   (PMF) between nucleobases. On the left, comparison between Martini 2 and 3 for the
+                                   cytosine-guanine base pair. On the right, comparison of the cytosine-guanine (C-G) and
+                                   guanine-guanine (G-G) base pairs using Martini 3. In both plots, CHARMM and AMBER
+                                   atomistic data are also reported5 for comparison. Errors are estimated with bootstrapping
+                                   and displayed as transparent shades. In the case of Martini, errors are smaller than 0.1
+                                   kJ/mol, and hence are not visible in the graphs.
+Author Manuscript
+
+
+
+
+                                       Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                        Page 17
+Author Manuscript
+Author Manuscript
+
+
+
+
+                                   Figure 2: New chemical bead types, sub-labels, and applications –
+                                   (A) Self-assembly of aedamers. The left panel shows the dimerization free energies (ΔGdim)
+                                   of pegylated monomers of 1,5-dialkoxynaphthalene (DAN) and naphthalene diimide (NDI).
+                                   Errors are estimated with bootstrapping. The right panel shows the self-assembled duplex
+                                   dimer formed by amide-linked tetramers of NDI (green) and DAN (orange). (B) As
+                                   indicatedby X-ray crystallography25, sodium ions (charged TQ5 bead) can bind to a buried
+                                   small cavity in the core of the adenosine A2A receptor. (C) Charged Q-beads in Martini
+                                   3 follow the classical Hofmeister series, as exemplified by the anion transfer between
+Author Manuscript
+
+
+
+
+                                   salt aqueous solutions and organophosphonium-based ionic liquids (right panel). Errors in
+                                   the average anion transfer percentage are estimated by block averaging. (D) Preferential
+                                   cation-π interaction between choline groups (Q1 bead) of phosphatidylcholine lipids and
+                                   aromatic residues of the Bacillus thuringiensis phosphatidylinositol-specific phospholipase
+                                   C (BtPI-PLC). The depth of insertion of each amino acid of BtPI-PLC is in very good
+                                   agreement with the insertion obtained from an atomistic MD simulation30.
+Author Manuscript
+
+
+
+
+                                       Nat Methods. Author manuscript; available in PMC 2025 October 26.
+                    Souza et al.                                                                                         Page 18
+Author Manuscript
+Author Manuscript
+
+
+
+
+                                   Figure 3: Improving packing, cavities and reducing protein stickiness –
+                                   (A) Hydration of Fragaceatoxin C (FraC) nanopore inserted in a lipid bilayer. (B) Scattering
+                                   profiles and a Martini 3 snapshot of a bulk heterojunction morphology of poly(3-hexyl-
+                                   thiophene) (P3HT, in red) and phenyl-C61-butyric acid methyl ester (PCBM, in blue)
+Author Manuscript
+
+
+
+
+                                   formed after solvent evaporation and annealing simulations. I(q) corresponds to scattering
+                                   intensity and q is the reciprocal space vector. (C) Aggregation levels of the soluble
+                                   proteins villin headpiece and the modified EXG-CBM in different salt concentrations. (D)
+                                   Aggregation levels of polyleucine helices in POPC and DLPC bilayers. Errors in the average
+                                   monomer percentage of (C) and (D) are estimated by block averaging. (E) Dimerization
+                                   of transmembrane helices. Left panel shows a comparison between experimental and
+                                                                                                                          X
+                                   calculated values for the mole fraction standard Gibbs free energy of dimerization ΔGass
+                                   of the following transmembrane protein domains: ErbB1, EphA1, WALP23 and GpA.
+                                   Simulation errors are estimated with bootstrapping while experimental data was obtained
+                                   in the literature41–48. In the case of GpA, error was estimated by the mean absolute error of
+                                   four independent experimental data43–47. A comparison between experimental and simulated
+Author Manuscript
+
+
+
+
+                                   binding modes of GpA is highlighted in the right panel. The experimental structure was
+                                   taken from solution NMR in micelles (PDB code AFO)49. Near identical experimental
+                                   structures were obtained by ssNMR in nanodiscs and X-ray crystallography in a lipid cubic
+                                   phase49–51.
+
+
+
+
+                                       Nat Methods. Author manuscript; available in PMC 2025 October 26.
+

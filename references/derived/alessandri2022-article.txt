@@ -1,0 +1,1136 @@
+RESEARCH ARTICLE
+                                                                                                                             www.advtheorysimul.com
+
+
+Martini 3 Coarse-Grained Force Field: Small Molecules
+Riccardo Alessandri,* Jonathan Barnoud, Anders S. Gertsen, Ilias Patmanidis, Alex H. de
+Vries, Paulo C. T. Souza,* and Siewert J. Marrink*
+
+                                                                                                        1. Introduction
+The recent re-parametrization of the Martini coarse-grained force ﬁeld,
+Martini 3, improved the accuracy of the model in predicting molecular                                  The use of coarse-grained (CG) models in
+                                                                                                       molecular dynamics (MD) simulations is
+packing and interactions in molecular dynamics simulations. Here, we
+                                                                                                       of paramount importance to explore length
+describe how small molecules can be accurately parametrized within the                                 and time scales beyond what is feasible with
+Martini 3 framework and present a database of validated small molecule                                 atomistic, or all-atom (AA), models.[1–6] In
+models. We pay particular attention to the description of aliphatic and                                CG models, atoms are bundled together
+aromatic ring-like structures, which are ubiquitous in small molecules such as                         into supra-atomic particles, or beads. Be-
+                                                                                                       sides widening the accessible spatiotempo-
+solvents and drugs or in building blocks constituting macromolecules such as
+                                                                                                       ral scales, such models can provide a more
+proteins and synthetic polymers. In Martini 3, ring-like structures are                                insightful picture with respect to atomistic
+described by models that use higher resolution coarse-grained particles (small                         ones, as the reduction in the number of de-
+and tiny particles). As such, the present database constitutes one of the                              grees of freedom translates into a simpler
+cornerstones of the calibration of the new Martini 3 small and tiny particle                           representation of the system which high-
+sizes. The models show excellent partitioning behavior and solvent                                     lights its key features. Thus, CG simula-
+                                                                                                       tions are an indispensable tool to comple-
+properties. Miscibility trends between diﬀerent bulk phases are also captured,
+                                                                                                       ment experimental methods to study pro-
+completing the set of thermodynamic properties considered during the                                   cesses such as spontaneous self-assembly,
+parametrization. We also show how the new bead sizes allow for a good                                  transformation between phases, domain
+representation of molecular volume, which translates into better structural                            formation, and host–guest binding.[1–6]
+properties such as stacking distances. We further present design strategies to                            CG models can be categorized as mainly
+                                                                                                       following a systematic (also known as hier-
+build Martini 3 models for small molecules of increased complexity.
+                                                                                                       archical) or a building block approach.[4,7]
+                                                                                                       Models developed on the basis of the for-
+                                                                                                       mer principle reproduce the underlying
+R. Alessandri[+] , J. Barnoud[++] , I. Patmanidis, A. H. de Vries,              atomistic structural data accurately, but require reparametriza-
+P. C. T. Souza[+++] , S. J. Marrink                                             tion whenever any condition changes, which makes the
+Groningen Biomolecular Sciences and Biotechnology Institute and                 parametrization procedure more time-consuming. Also, poten-
+Zernike Institute for Advanced Materials                                        tial forms required are often complex, which can result in lower
+University of Groningen
+Nijenborgh 7, Groningen 9747 AG, The Netherlands
+                                                                                performance and therefore less sampling. On the other side,
+E-mail: ric.alessandri@gmail.com; paulocts@gmail.com;                           models developed following a building block approach are often
+s.j.marrink@rug.nl                                                              cheaper due to the use of simpler potential forms and the only
+A. S. Gertsen                                                                   partial parametrization required. Moreover, the parametrization
+Department of Energy Conversion and Storage                                     of the building blocks enables their use as part of similar moi-
+Technical University of Denmark                                                 eties in diﬀerent molecules, providing a second advantage of the
+Fysikvej 310, Lyngby DK-2800 Kgs., Denmark
+                                                                                building block approach: the transferability of the models devel-
+      The ORCID identiﬁcation number(s) for the author(s) of this article       oped within such a framework. However, these advantages come
+      can be found under https://doi.org/10.1002/adts.202100391                 at the cost of a more limited structural accuracy, given the neces-
+[+] Present address: Pritzker School of Molecular Engineering, University       sarily suboptimal representation of the underlying atomistic de-
+of Chicago, Chicago, IL 60637, USA                                              tail inherent to building block-based CG models. Most of the CG
+[++] Present address: Intangible Realities Laboratory, University of Bristol,   models, however, do not ﬁt purely in either of the categories but
+School of Chemistry, Cantock’s Close, Bristol BS8 1TS, UK                       often include features of both CG modeling approaches.[4]
+[+++] Present address: Molecular Microbiology and Structural Biochem-              Among the building block approaches to coarse-graining,
+istry (MMSB, UMR 5086), CNRS & University of Lyon, 7 Passage du Ver-            notably the Martini CG force ﬁeld[8] has seen many applications
+cors, Lyon 69007, France                                                        due to successes achieved in the description of a wide range of
+© 2021 The Authors. Advanced Theory and Simulations published by                biomolecular systems[9] We note that the force ﬁeld, originally
+Wiley-VCH GmbH. This is an open access article under the terms of the           intended for biomolecular simulations, has been successfully
+Creative Commons Attribution License, which permits use, distribution
+and reproduction in any medium, provided the original work is properly          applied to describe systems relevant in soft materials science,
+cited.                                                                          such as (block co)polymers, self-assembled supramolecular
+                                                                                materials, and organic semiconductors.[10] The wide use of
+DOI: 10.1002/adts.202100391
+
+
+Adv. Theory Simul. 2022, 5, 2100391         2100391 (1 of 19)               © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                    25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                        www.advtheorysimul.com
+
+the Martini model, however, highlighted a number of short-            scribe how the models perform in terms of partitioning behavior
+comings, in particular in the description of structures which         between water and apolar phases (Section 3.1), solvent proper-
+are modeled with a ﬁner resolution than Martini’s standard            ties such as mass density and heat of vaporization (Section 3.2),
+resolution of 4 non-hydrogen atoms per bead (4-to-1).[11–15]          miscibility (Section 3.3), and stacking interactions (Section 3.4).
+Finer 3-to-1, or 2-to-1 mappings are required when modeling           Last, in Section 3.5, we concisely summarize the key points, lim-
+ring-like structures,[8] or to adhere to the symmetry of the repeat   itations, and envisioned applications of the models.
+unit of a polymer.[16] For such ﬁner mappings, “small”[8] and
+subsequently even smaller, “tiny” beads[17] were introduced.          2. Model and Methods
+However, the parametrization of the cross-interactions be-
+tween small and tiny beads and regular beads was performed            2.1. Coarse-Graining Small Molecules Within Martini 3
+on an ad hoc basis. As we have shown in previous work,[11]
+this ad hoc parametrization in concert with deviations from           2.1.1. Basics
+the standard bonded parameters used in the original Martini
+parametrization[8] results in small but systematic deviations in      Nonbonded Interactions: For a thorough description of the Mar-
+packing and intermolecular interactions.[11] Such deviations are      tini 3 force ﬁeld, we refer to the main publication.[24] Brieﬂy, as in
+one of the main reasons for the observed overestimated interac-       the previous version of the force ﬁeld, the main parametrization
+tions between Martini models of proteins and sugars,[14,18] and       target remains the free energy of transfer between several pairs
+the necessity for the development of custom beads for polymers        of solvents, such as hexadecane/water, octanol/water, and chlo-
+and other molecules which use 3-to-1 or 2-to-1 mappings.[19,20]       roform/water. Comparison to inﬁnite-dilution properties such as
+Given the ubiquitous role of ring-like structures across the          transfer free energies allows to probe mainly solvent-solute cross-
+chemical space, addressing such shortcomings was important            interaction, albeit solvent-solvent self-interaction is also probed
+for applications ranging from protein-ligand binding[21] to           for the considered solvents. Moreover, in Martini 3, miscibility
+imidazolium-based ionic liquids[22] and conjugated molecular          data constitute a second core parametrization target: depending
+materials.[23] To address these shortcomings, a new version of        on the available reference data, miscibility can be checked by ei-
+the Martini model has been recently developed, Martini 3: with a      ther qualitatively looking at the miscibility of two phases or by
+re-balanced set of nonbonded interactions and expanded variety        computing excess free energies of mixing, as it will also be shown
+of CG particle types, the new version of the force ﬁeld shows         in this contribution. Comparison to miscibility data allows to
+improved accuracy overall in predicting molecular packing and         probe at the same time not only the cross-interaction between
+interactions.[24]                                                     the two molecular species but also the relative self-interaction of
+   In light of the recent development of Martini 3,[24] we here       the two species.
+describe how small molecules can be accurately parameterized             Molecular fragments are used as building blocks (beads),
+within the Martini 3 framework and present a database of vali-        whose nonbonded interactions are described by modiﬁed
+dated small molecule models. We pay particular attention to the       Lennard–Jones (LJ) interactions. To describe the chemical nature
+description of aliphatic and aromatic ring-like structures, given     of the underlying atomistic structure, CG beads with more or less
+their ubiquity in small molecules such as solvents and drugs          polar character exists. As in Martini 2, there are four main types of
+or in building blocks constituting macromolecules such as pro-        beads: polar (P), intermediately polar (N), apolar (C), and charged
+teins and synthetic polymers. Such ring-like structures are de-       (Q). Moreover, a separate water (W) bead, a bead for divalent ions
+scribed by models that use small and tiny CG particle types.          (D), and a set of beads (X) dedicated to groups containing halo-
+As such, the present database of small molecules constitutes          gen atoms are now included. The P-, N-, C-, Q-, and X-bead types
+one of the cornerstones of the calibration of the new Martini         are in turn divided in subtypes based on their hydrogen-bonding
+3 small and tiny particle sizes. We comprehensively describe          capabilities, degree of polarity, or charge softness.[24] To keep the
+how to parameterize small molecules, describe which properties        model simple, the levels of interactions (LJ 𝜀) are discretized. In
+have been considered during the parametrization, present design       Martini 3, the number of possible interaction levels was extended
+strategies to build complex small molecules, show what can be         from 10 to 22.
+achieved with the new models, and discuss expected strengths             Similarly to the LJ 𝜀, also the sizes of the beads (LJ 𝜎) are
+and potential weaknesses of the new models. With this work,           discretized. There are three bead sizes—regular (R), small (S),
+we initiate a database of Martini 3 models for small molecules        and tiny (T), with 𝜎 of 0.47, 0.41, and 0.34 nm, respectively—
+(currently 90 entries) that includes Martini 3 models, atomistic      and cross-interactions across sizes (R-S, R-T, S-T) are speciﬁcally
+reference structures, atomistic-to-CG (and vice versa) mapping        parameterized. In particular, the three available bead sizes are
+ﬁles, and reference and computed properties (available at https:      now fully balanced, with regular, small, and tiny beads intended
+//github.com/ricalessandri/Martini3-small-molecules and http:         to be used for 4-to-1, 3-to-1, and 2-to-1 atoms-to-bead mappings,
+//cgmartini.nl).                                                      respectively. As such, small and tiny beads are not only appro-
+   This paper is structured as follows. In Section 2, we start        priate to represent ring-like fragments, but also suited for cases
+by summarizing the main features of Martini 3 and we subse-           involving 3-to-1 and 2-to-1 mapping of linear and branched chem-
+quently describe in detail how to model small molecules’ aro-         ical groups. Moreover, when fully branched fragments (e.g., qua-
+matic and aliphatic core elements (Section 2.1.1), substituents       ternary carbon atoms or tertiary amine groups) need to be de-
+and functional groups (Section 2.1.2), and molecules of increased     scribed, one should usually use beads of a smaller size, such as
+complexity (Section 2.1.3); we moreover describe the database         an S-bead for a fully branched fragment containing four non-
+(Section 2.2) and methods used (Section 2.3). In Section 3, we de-    hydrogen atoms. The rationale for this is that the central atom
+
+
+Adv. Theory Simul. 2022, 5, 2100391   2100391 (2 of 19)           © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                         25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                             www.advtheorysimul.com
+
+
+
+
+Figure 1. Examples of mappings of small molecules of increasing complexity. 2D chemical structures are shown along with renderings of their corre-
+sponding Martini 3 CG models. From left to right: (ﬁrst row) cyclohexane, benzene, piperidine, p-cresol, naphthalene, and caﬀeine; (second row) the
+molecular dopant N-DMBI, the drug dasatinib. CG beads are color-coded as follows: apolar aliphatic (C1–C3 type) beads are in cyan, apolar aromatic
+(C4–C6) beads are in silver, intermediately polar (N1–N6) beads in blue, polar (P1–P6) beads in red, halogen-containing (X1–X4) beads in green, and
+dummy beads in white.
+
+
+of a fully branched fragment is not exposed to the environment,            mapped rings, as just discussed for benzene. COG-based (like
+and this reduces its inﬂuence on the environment. A thorough               COM-based) bond lengths can be directly extracted from AA
+description of Martini 3 is presented in Supporting Information            models: such a direct link to the underlying atomistic structure is
+of ref. [24].                                                              important, as it, for example, makes them suitable for automated
+   Bonded Interactions: In contrast to Martini 2, which relied on          topology building.[12,25–28] Hence, using COG-based mapping of
+using the center of mass (COM) of the mapped chemical groups               atomistic structures constitute the standard procedure for obtain-
+to deﬁne the CG bonded parameters of a molecule, Martini 3                 ing bonded parameters in Martini 3; such parameters can then, if
+follows a “size-shape concept” aimed at preserving the volume              necessary, be reﬁned, as discussed in more detail in Section 3.2.
+and shape of molecules with respect to the underlying atomistic               Aromatic Rings. Aromatic (i.e., planar, atom-thick) structures
+reference structures.[24] In general, bond lengths obtained from           are best described by tiny beads. The prototypical aromatic com-
+COM mapping proved to be unsatisfactory, usually leading to too            pound, benzene, is described by a three-bead model reminiscent
+high packing densities. This is exempliﬁed for benzene in Fig-             of its Martini 2 model[8] (see also Figure 1): each of the three beads
+ure S1, Supporting Information and it is not unexpected: the               represents two consecutive carbon atoms and their correspond-
+original Martini 2.0 benzene model already uses bond lengths               ing hydrogen atoms. However, there are a few important diﬀer-
+of 0.27 nm, ≈25% longer than bond lengths extracted following              ences. First, the model now uses T-beads rather than S-beads.
+COM mapping.[8] The inadequacy of COM-mapped bond lengths                  In this way, the six non-hydrogen atoms which constitute ben-
+is due to the geometrical mismatch enforced by the lower resolu-           zene are described by three beads which have been parameter-
+tion of the CG representation (e.g., triangular versus hexagonal           ized speciﬁcally for 2-to-1 mappings. Moreover, the radius of T-
+shape of benzene) and by not taking into account the volume of             particles is such that stacking distances between Martini models
+hydrogen atoms. Instead, center-of-geometry (COG)-based map-               of aromatic structures agree with atomistic and/or experimental
+ping performed taking into account the hydrogen atoms leads to             stacking distances (see also Section 3.4). For benzene, or more
+better molecular (e.g., solvent accessible surface area) and bulk          generally nonsubstituted −C=C− groups part of aromatic com-
+(e.g., mass densities) properties (Section 3.2). COG-mapping is            pounds, the Martini bead type of choice is TC5, that leads to free
+especially important the more the mapping is close to atomistic            energies of transfer in excellent agreement with experimental
+resolution, that is, when using T-beads. COM and COG are in-               data in the literature (see Section 3.1); therefore benzene is rep-
+deed almost equivalent in the case of a 4-to-1 mapped alkane               resented by a TC5-TC5-TC5 model. A COG-based bond length
+chain (see Figure S2, Supporting Information). In contrast, they           of 0.29 nm is used (see also Figure S1, Supporting Information),
+provide considerably diﬀerent bond lengths in the case of 2-to-1           which leads to a mass density for liquid benzene of 0.890 g cm−3 ,
+
+
+
+Adv. Theory Simul. 2022, 5, 2100391      2100391 (3 of 19)             © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                      25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                          www.advtheorysimul.com
+
+in excellent agreement (≈2% too high) with the experimental             count when extracting bonded interactions for the CG models
+value of 0.877 g cm−3 .                                                 from COG-mapped atomistic simulations. In particular, when
+   Aromatic ring models are held together[8] by constraints.[29]        an atom is shared between two beads, the atom’s contribution
+Distributions of bond lengths obtained from mapped AA simu-             to the position of either of the beads should be halved. For ex-
+lations between beads which are part of aromatic structures are         ample, in toluene, the position of the SC4 bead is deﬁned by the
+indeed very narrow (Figure S1c, Supporting Information). As a           group −CHa) =C(−CH3 )−CHa) = (see Table 1). This means that
+consequence, they would require very stiﬀ potentials, and such          the position of this bead, necessary, for example, to extract bond
+potentials would in turn demand very short time steps. However,         lengths, will be determined by ﬁve atoms—the C atom and the
+at the Martini scale the fast stretching of these bonds becomes         three H atoms of the methyl group and the C atom connected to
+unimportant, and such stiﬀ bonds can be replaced by constraints,        the methyl group—with a weight, w, of 1 each, while the two C
+that is, those bond lengths become constants. More extended stiﬀ        atoms in the “ortho” position, the shared atoms, will contribute
+molecular structures can be conveniently described by using vir-        to the position of the bead each with w = 12 . Note that we found
+tual sites, as discussed in detail in Section 2.1.3.                    that not including the hydrogens of shared atoms when extract-
+   The parameters of benzene form the basis for all the aromatic        ing COG-based bonded parameters leads to properties (see Re-
+ring-like structures, some of which are shown in Figure 1. To-          sults Section) in slightly better agreement with reference data.
+gether with the other topologies presented in this work, this set          Beads are chosen based on partitioning data, the Martini
+should guide the development of new Martini 3 models for aro-           hallmark.[9] More bead types are now available within Martini
+matic molecules and molecular fragments.                                3 with respect to Martini 2, thus, for example, the three groups
+   Aliphatic Rings. Aliphatic ring-like structures are described        −N(−CH3 )−, =CHa) −O−CHa) =, and −CH2 a) −O−CH2 a) − (found
+by small beads. The prototypical aliphatic cyclic compound, cy-         in 1-methylimidazole, furan, and tetrahydrofuran, respectively—
+clohexane, is described by a two-S-bead model, diﬀerentiating it        see also Table 1) described in Martini 2 by a SN0 bead are now
+from the Martini 2 model.[8] The model has been devised to cap-         described by a TN1, TN2a, and TN4a bead, respectively. Table 1,
+ture the larger bulkiness of cyclohexane, as compared to its aro-       listing mapping of CG particle types to chemical building blocks,
+matic counterpart, that is, benzene. The beads used to describe         serves as an additional guide towards the assignment of CG par-
+cyclohexane are of type SC3 based on partitioning data (see Sec-        ticle types. More bead assignments are exempliﬁed in Tables S24
+tion 3.1). Bonds keep together aliphatic models, as bond distri-        and S25, Supporting Information of ref. [24].
+butions are broader in the case of aliphatic rings (compare Fig-           Besides expanding the applicability of the hydrogen bonding
+ure S1c and Figure S1f, Supporting Information). A bond length          “labels”, or interaction modiﬁers, already available in Martini 2,
+of 0.378 nm is used, leading to a mass density for liquid cyclo-        Martini 3 introduced also electron polarizability labels.[24] These
+hexane of 0.793 g cm−3 , in excellent agreement (≈2% too high)          labels mimic changes to the interactions of a molecular fragment
+with the experimental value of 0.774 g cm−3 .                           due to inductive/conjugate eﬀects caused by neighboring chemi-
+   Analogously to benzene, cyclohexane constitutes the basis for        cal groups. Accordingly, C- and X-beads can acquire an electron–
+the aliphatic ring-like structures. Accordingly, the present pool of    donor (or “enriched,” label “e”) or electron–acceptor (“vacancy”,
+aliphatic compounds should serve as reference for the develop-          label “v”) character. Such labels were shown to nicely capture pref-
+ment of new Martini 3 models of aliphatic molecules and molec-          erential orientations in aedamers.[24] Moreover, such labels could
+ular fragments. Concluding this section we also note that, al-          be used to capture halogen-bonding capabilities of X-beads, as
+though the CG models do not preserve the symmetries of both             such interactions have been recently shown to be important in,
+the prototypical aromatic (benzene) and aliphatic (cyclohexane)         for example, membrane-small molecule interactions.[30] The “e”
+compounds, they do increasingly capture the size, shape, and            label is also applied to, for example, the central bead describing
+symmetries of increasingly larger molecules.                            naphthalene—which is hence a TC5e bead, see Table 1—being
+                                                                        that an electron-rich region of the molecule.
+                                                                           Mapping Substituted Ring-like Fragments. Figure 2 shows
+2.1.2. Mapping Small Molecules                                          how to map substituted ring-like fragments as a function of sub-
+                                                                        stituent number and size. Such mappings are based on the fol-
+Bead Type Choice. While benzene and cyclohexane form the ba-            lowing two principles: 1) map all the non-hydrogen atoms with
+sis of the, respectively, aromatic and aliphatic ring-like structures   the minimum possible number of beads and 2) preserve the sym-
+which appear in small molecules, most of the interesting com-           metry, volume, and shape of the molecule as much as possible,
+pounds also contain heteroatoms either within the ring struc-           with aromatic rings being best described by T-beads and aliphatic
+tures themselves or as substituents. Table 1 lists a subset of          rings by S-beads. Principle (1) alone would, for example, demand
+the small and tiny Martini particle types and the corresponding         a model for benzene made by either two S-beads or one R-bead
+chemical building block which they describe in Martini 3 models,        and one T-bead, as such models would use the minimum possi-
+along with examples of small molecules which employ that par-           ble number of beads (given the six non-hydrogen atoms of ben-
+ticle type. Note that in some cases a (group of) atom(s) is shared      zene that need to be described). However, principle 2) tells us to
+between two neighboring beads: this is indicated with the super-        disregard both of these models, since the molecular volume and
+script a) in Table 1 and throughout this manuscript. Atom-sharing       shape of benzene are best described by T-beads. Hence, a three-
+between beads is sometimes necessary in order to keep the sym-          T-bead model is the best choice for benzene.
+metry of the underlying atomistic structure—see, for example,              The same principles can guide the mapping of substituted ben-
+phenol, tetrahydrofuran, or toluene in Table 1. Note that atom-         zene shown in Figure 2. For example, when adding a methyl
+sharing is important also because it needs to be taken into ac-         group to benzene to obtain toluene (top row of Figure 2), one
+
+
+Adv. Theory Simul. 2022, 5, 2100391    2100391 (4 of 19)            © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                                25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                                 www.advtheorysimul.com
+
+Table 1. Small molecule building blocks. CG particle type, corresponding chemical building block, and examples of molecules in which such a block
+appears. The atoms the CG block is taken to represent are also shown in the 2D chemical structures, with T-beads, S-beads, and R-beads depicted in
+blue, green, and red, respectively.
+
+                                                                                                            examples
+
+type                              chemical building block                        2D                             name (mapping)
+
+P2                                CH3 CH2 −COOH                                                                 Propanoic acid (P2)
+
+
+
+SP2                               CH3 −COOH                                                                     Acetic acid (SP2)
+
+
+P1                                (CH3 )2 CH−OH                                                                 Isopropanol (P1)
+
+
+
+TP1d                              −CH2 OH (bonded to −CF3 )                                                     2,2,2-triﬂuoroethanol (SX4e-TP1d)
+
+
+
+                                      a)                    a)                                                  b)
+SN6                               −CH =C(−OH)−CH =                                                                   Phenol ((TC5)2 -SN6)
+
+
+
+                                       a)                         a)                                            b)
+                                  −CH2 −CH(−OH)−CH2 −                                                                Cyclopentanol (SN6-SC3)
+
+
+
+                                      a)                     a)                                                 b)
+SN6d                              −CH =C(−NH2 )−CH =                                                                 Aniline ((TC5)2 -SN6d)
+
+
+
+                                      a)          a)                                                            b)
+TN6d                              =CH −NH−CH =                                                                       pyrrole ((TC5)2 -TN6d)
+
+
+                                       a)              a)                                                       b)
+                                  −CH2 −NH−CH2 −                                                                     pyrrolidine (SC3-TN6d)
+
+
+
+                                                                                                                b)
+TN6                               =C(−OH)−                                                                           p-cresol ((TC5)2 -TC5-TN6)
+
+
+
+
+N6a                               −(CH2 )2 −CH(=O)                                                              Heptanal (C1-N6a)
+
+
+
+
+                                                                                                                b)
+TN6a                              −CH=N−                                                                             Pyridine ((TC5)2 -TN6a)
+
+
+                                                                                                                b)
+                                  =C=O                                                                               Benzoquinone (TN6a-(TC5)2 -TN6a)
+
+
+
+
+                                                                                                                b)
+SN5a                              −O−CH2 −O−                                                                         1,3-dioxolane (SN5a-TC3)
+
+
+                                                                                                                b)
+N4a                               −C(=O)−O−CH3                                                                       Methyl-benzoate (N4a-(TC5)3 )
+
+
+
+
+                                  CH3 −C(=O)−O−CH3                                                              Methyl-acetate (N4a)
+
+
+
+                                                                                                                                                  (Continued)
+
+
+
+
+Adv. Theory Simul. 2022, 5, 2100391            2100391 (5 of 19)       © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                         25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                           www.advtheorysimul.com
+
+Table 1. Continued.
+
+                                                                                                   examples
+
+type                             chemical building block                2D                            name (mapping)
+                                                                                                      b)
+SN4a                             −CH2 −O−CH2 −                                                             Tetrahydropyran (SC3-SN4a)
+
+
+
+                                                                                                      b)
+                                 −C(=O)−CH3                                                                Acetophenone (SN4a-(TC5)3 )
+
+
+
+
+                                       a)           a)                                                b)
+TN4a                             −CH2 −O−CH2 −                                                             Tetrahydrofuran (SC3-TN4a)
+
+
+                                                                                                      b)
+                                 −C≡N                                                                      Benzonitrile ((TC5)3 -TN4a)
+
+
+
+
+                                                                                                      b)
+                                 −CH(=O)                                                                   Benzaldehyde ((TC5)3 -TN4a)
+
+
+
+                                                                                                      b)
+SN3a                             −CH2 −O−CH2 −                                                             1,4-dioxane (SN3a-SN3a)
+
+
+
+                                                                                                      b)
+SN3a                             −NO2                                                                      Nitrobenzene ((TC5)3 -SN3a)
+
+
+
+
+                                                                                                      b)
+SN2a                             =C(−O−CH3 )−                                                              o-methylanisole (SN2a-TC4-(TC5)2 )
+
+
+
+                                      a)       a)                                                     b)
+TN2a                             =CH −O−CH =                                                               Furan ((TC5)2 -TN2a)
+
+
+                                                                                                      b)
+                                 −O−CH3                                                                    Methoxybenzene ((TC5)3 -TN2a)
+
+
+
+
+                                                                                                      b)
+SN1                              −N(−CH3 )2                                                                N,N-dimethylaniline ((TC5)3 -SN1)
+
+
+
+
+                                                                                                      b)
+TN1                              −N(−CH3 )−                                                                1-methylimidazole (TC5-TN1-TN6a)
+
+
+
+                                      a)                 a)                                           b)
+SC6                              −CH =C(−SH)−CH =                                                          Thiophenol ((TC5)2 -SC6)
+
+
+
+                                                                                                      b)
+                                 −CH2 −S−CH2 −                                                             Tetrahydrothiophene (SC6-TC3)
+
+
+                                      a)       a)                                                     b)
+TC6                              =CH −S−CH =                                                               Thiophene ((TC5)2 -TC6)
+
+
+                                                                                                      b)
+TC5                              −CH=CH−                                                                   Benzene ((TC5)3 )
+
+
+
+                                                                                                                                           (Continued)
+
+
+
+
+Adv. Theory Simul. 2022, 5, 2100391           2100391 (6 of 19)   © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                                                   25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                                                     www.advtheorysimul.com
+
+Table 1. Continued.
+
+                                                                                                                                   examples
+
+type                               chemical building block                                         2D                                  name (mapping)
+                                                                                                                                       b)
+                                   −CH=CH2                                                                                                  Styrene ((TC5)4 )
+
+
+
+
+                                                                                                                                       b)
+TC5e                               (−)2 C=C(−)2                                                                                             Naphthalene ((TC5)2 -TC5e-(TC5)2 )
+
+
+C4h                                CH3 −CH=CH−CH3                                                                                      1-Butene (C4h)
+
+
+                                        a)                      a)                                                                     b)
+SC4                                −CH =C(−CH3 )−CH =                                                                                       Toluene ((TC5)2 -SC4)
+
+
+
+                                                                                                                                       b)
+TC4                                =C(−CH3 )−                                                                                               o-methylanisole (SN2a-TC4-(TC5)2 )
+
+
+                                                                                                                                       b)
+SX4e                               −CF3                                                                                                     Benzotriﬂuoride ((TC5)3 -SX4e)
+
+
+
+
+                                   −CF3                                                                                                2,2,2-triﬂuoroethanol (SX4e-TP1d)
+
+
+
+                                                                                                                                       b)
+SC3                                −(CH2 )3 −                                                                                               Cyclohexane (SC3-SC3)
+
+
+                                          a)                         a)                                                                b)
+                                   −CH2 −CH(−CH3 )−CH2 −                                                                                    Methylcyclopentane (SC3-SC3)
+
+
+                                                                                                                                       b)
+TC3                                −CH2 −CH3                                                                                                Ethylbenzene ((TC5)3 -TC3)
+
+
+
+
+                                                                                                                                       b)
+                                   −CH2 −CH2 −                                                                                              Tetrahydrothiophene (SC6-TC3)
+
+
+                                        a)             a)                                                                              b)
+SX3                                −CH =C(−Cl)−CH =                                                                                         Chlorobenzene ((TC5)2 -SX3)
+
+
+
+                                                                                                                                       b)
+SC2                                −(CH2 )2 −(CH3 )                                                                                         3-propyl-thiophene (TC6-(TC5)2 -SC2)
+
+
+
+                                                                                                                                       b)
+X2                                 CHCl3                                                                                                    Trichloromethane (X2)
+
+
+                                        a)                 a)                                                                          b)
+SX2                                −CH =C(−Br)−CH =                                                                                         Bromobenzene ((TC5)2 -SX2)
+
+
+
+
+C1                                 CH3 −(CH2 )2 −CH3                                                                                   Butane (C1)
+
+
+                                        a)            a)                                                                               b)
+X1                                 −CH =C(−I)−CH =                                                                                          Iodobenzene ((TC5)2 -X1)
+
+
+
+
+a) Indicates that the (group of) atom(s) is shared with neighboring beads; b) indicates molecules considered in this work; others are from ref. [24].
+
+
+
+
+Adv. Theory Simul. 2022, 5, 2100391               2100391 (7 of 19)                  © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                           25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                               www.advtheorysimul.com
+
+
+
+
+Figure 2. Recommended mappings for substituted aromatic small molecules. Mono- (top), di- (center), and tri-substituted (bottom) rings are shown.
+In the case of di-substituted rings, we distinguish between para- and meta- or ortho-substitutions, the latter two to be treated identically in terms of
+mapping. Small diﬀerences in bonded parameters may arise when extracting them from COG-mapped atomistic simulations. Regular, small, and tiny
+beads are indicated in red, green, and blue, respectively, but not drawn to scale.
+
+
+
+of the three beads used to describe the benzene plane become                  matic structures. As mentioned earlier, Martini aromatic ring
+a larger S-bead to account for the extra carbon atom. When in-                structures are held together by constraints. As more extended
+stead adding an ethyl group as substituent on benzene—to ob-                  stiﬀ molecular structures need to be described (e.g., in polycyclic
+tain ethyl-benzene—an extra T-bead should be used, as shown in                aromatic compounds), the number of constraints that need to be
+Figure 2 (top row). Such a choice allows to keep a three-T-bead               used in their Martini representations grows. However, a highly
+model for the benzene moiety, which is the most accurate model                extended network of constraints leads to numerical instabilities,
+for benzene in Martini 3. At the same time, the two extra carbon              as it is increasingly complicated to satisfy a growing number of
+atoms of the ethyl group can be modelled by a T-bead, which we                connected constraints (we note that we use GROMACS[32] and
+recall are parametrized speciﬁcally for 2-to-1 mappings.                      the LINCS[29] constraint solver). Saving on the number of con-
+                                                                              straints by using virtual sites not only increases the numerical
+                                                                              stability of the simulations but also improves their performance.
+2.1.3. Advanced Model Design Strategies                                          Construction 1: “Hinge” Model. The ﬁrst design strategy is
+                                                                              useful to build models for rigid, fused polycyclic compounds
+Building More Complex Models. We now describe a num-                          and can be illustrated by the proposed model for the molecule
+ber of design strategies useful to build more complex small                   of naphthalene (NAPH)-–Figure 3a. The molecule consists of
+molecule models, that is, models comprising more than one aro-                ten aromatic carbon atoms, which translates into a 5-TC5-bead
+matic/aliphatic ring-like structure. Necessarily, the strategies de-          Martini model. Simply interconnecting the ﬁve beads with con-
+scribed do not represent a comprehensive list, nor are they the               straints leads to a network of eight constraints (see Figure S3a,
+only way to build a model for a certain molecular construction                Supporting Information). Such a network of constraints already
+within the Martini framework. However, we found them to be                    starts to be hard to satisfy: whereas one molecule in vacuum is
+very helpful when building Martini models for more complex                    still numerically stable with a time step of 20 fs, a condensed
+small molecules, and we thus describe them here with the aim                  phase of such a model (432 molecules in a periodic box) read-
+of enabling a more facile construction of Martini models by the               ily leads to numerical instabilities with time steps as low as 10
+Martini user community. The strategies can be used in combi-                  fs, thus requiring even smaller time steps. This makes large-
+nation and can be adapted to diﬀerent chemistries than the ones               scale simulations impracticable. The idea to overcome this lim-
+described in the examples. Furthermore, they form an initial set              itation is inspired by the “hinge” construction used in the latest
+of “rules” which may be implemented in the next generation                    cholesterol model proposed by Melo and coworkers.[13] Indeed,
+of programs aimed at automated topology building of Martini                   another model which could be devised for naphtalene exploits
+models.[12,26,28]                                                             the “hinge” construction for the four external beads (Figure 3a
+   Many of the model design strategies outlined below lever-                  and Figure S3b, Supporting Information), while the central bead
+age virtual (interaction) sites.[31] In general, the use of virtual           is described as a virtual interaction site, that is, a particle whose
+sites improves the numerical stability of Martini models of small             position is completely deﬁned by its constructing particles (in this
+molecules which are comprised of multiple, or extended, aro-                  case, the other four beads). The displacement of the virtual site
+
+
+Adv. Theory Simul. 2022, 5, 2100391       2100391 (8 of 19)              © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                            25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                                www.advtheorysimul.com
+
+
+
+
+Figure 3. Advanced design strategies to build Martini models for small molecules of increasing complexity. a) Two fused rings can be modeled with a
+“hinge” construction, as exempliﬁed for naphthalene. b) Two (or more) rigid planar fragments, whose relative dihedral angle can be controlled, can be
+modeled via a “divide and conquer” strategy; this is exempliﬁed for 2,2′ -bithiophene. c) Ring systems linked via a sp2 hybridized carbon, such as in 2-
+(phenylmethylidene)cyclopent-4-ene-1,3-dione, represent a “molecular turn” that can be modeled with a speciﬁc construction. Schematic representations
+of the CG models are drawn on top of the chemical structures: a gray circle with solid red contour indicates a CG particle, a gray circle with a dashed
+cyan contour represents a virtual interaction site, and a smaller gray circle with a dashed gray contour represents a virtual dummy site. Solid red lines
+indicate constraints, while double blue lines indicate harmonic bonds.
+
+
+itself is not calculated by the integrator algorithm, but its posi-           beads (i.e., only 1–2 interactions are excluded), for rigid frag-
+tion is recalculated from the new positions of the constructing               ments or molecules nonbonded exclusions are commonly ap-
+particles after each integration step.[32] Of course, forces on the           plied between all the beads of the rigid fragment/molecule (see,
+virtual interaction site are accounted for—these are distributed to           e.g., the case of naphthalene just discussed). However, in gen-
+the constructing atoms in each integration step. Virtual sites are            eral, nonbonded interactions are important for more ﬂexible frag-
+also mass-less, thus the mass of the bead they represent must be              ments or molecules, where keeping nonbonded interactions be-
+accounted for; in the NAPH case, it is evenly added to the masses             tween beads separated by 2 (i.e., 1–3 interactions) or 3 (i.e., 1–4
+of the constructing particles. Due to the reduction on the number             interactions) bonds may be beneﬁcial to capture nontrivial fea-
+of constraints used (from 8 to 5), the use of the hinge model also            tures of the interactions.
+accelerates the calculation: in the case of the same NAPH con-                   To get even more speed-up and get rid of the improper dihe-
+densed phase, the simulation runs ≈1.5 times faster. Note also                dral potential, one could think of reducing further the number
+that an improper dihedral is applied in order to keep the hinge               of particles to three—the minimal amount of particles needed to
+model ﬂat (see the comparison of the improper dihedral distri-                deﬁne the NAPH plane—and then construct the remaining two
+bution to AA reference data in Figure S3c, Supporting Informa-                as virtual interaction sites. However, this would make NAPH an
+tion). Finally, exclusions are applied between the two beads of the           absolutely rigid body. When torque is generated at one end of the
+hinge that are not connected by any bond. It is worth nothing that            model, the consequent rigid-body rotation can cause a very large
+Martini does not have a deﬁned exclusion rule in its parametriza-             displacement on the opposite end, possibly resulting in unphys-
+tion protocol. In particular, although by default in Martini non-             ical overlap with other system components.[13] The hinge model,
+bonded exclusions are deﬁned only between directly connected                  on the other hand, works as a shock absorber,[13] preventing such
+
+
+Adv. Theory Simul. 2022, 5, 2100391        2100391 (9 of 19)              © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                       25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                           www.advtheorysimul.com
+
+an absolute rigid body behavior. It is thus recommended to opt           motion of the two rings relative to each other. Also here, virtual
+for such a nonrigid body model. This strategy was used to develop        dummy sites come in handy. By deﬁning such a virtual dummy
+models for other extended ring structures, such as caﬀeine and           site in the COG of each of the ring-systems and a third virtual
+polyacenes (see Figure S3d–f, Supporting Information). Note that         dummy site directly on top of the linking sp2 hybridized carbon,
+in these other cases, more than one virtual site per hinge was de-       it is possible to allow the correct torsion around the single
+ﬁned.                                                                    bond despite not having an actual CG bead at the rotation axis.
+   Construction 2: “Divide and Conquer”. A second design strat-          The phenyl ring and the dione-substituted cyclopentene are,
+egy is useful to build arbitrarily long chains of rigid planar           respectively, mapped using the standard benzene construction
+fragments whose relative dihedral angle can be controlled; it is         and a hinge-type construction similar to the one described
+illustrated by the proposed model for 2,2′ -bithiophene (2T)—            above (cf. Figure 3a); the virtual dummy site on the linking
+Figure 3b. This construction is relevant not only for small              sp2 hybridized carbon is constructed from the two oxo group
+molecules but also for conjugated polymers,[33] Indeed, this sec-        beads and the methylidene bead (using [ virtualsites3 ] in
+ond strategy, dubbed “divide and conquer,” is inspired by the            GROMACS). The connection to the phenyl group is taken care
+polymer backbone construction used in Martini polythiophene              of by using a harmonic bond between the COG virtual dummy
+models.[33,34] The two thiophene rings are described by three T-         site of the phenyl group and the virtual dummy site of the linker,
+beads each. To connect them in 2,2′ -bithiophene while allow-            and the angle between the two ring-systems is conserved by a
+ing for control of the dihedral angle between the two thiophene          harmonic angle potential between the three virtual sites. This
+planes, we use two virtual dummy sites at the center of geometry         means that the torsion of the phenyl group relative to the rest
+of the thiophenes. Note that by dummy we mean a site that does           of the molecule can be described by a proper dihedral potential
+not interact via nonbonded interactions; this type of virtual site       centered on the COG virtual dummy site of the phenyl group and
+is to be contrasted with the virtual interaction site of the previous    the virtual dummy site of the linker. Note that it is also necessary
+construction which instead does interact as a standard CG parti-         to add an improper dihedral potential to keep the phenyl CG
+cle. The two dummy sites are then connected by an harmonic               beads in plane with the virtual dummy site of the linker as well
+bond. In this way, we can apply a dihedral potential i-Di -Dj -j,        as one keeping the COG virtual dummy site of the phenyl group
+where Di and Dj are the dummy sites on the two thiophenes and            in plane with the CG beads of the dione-substituted cyclopen-
+i and j are two particles on either of the thiophenes; for i and j, it   tene. With this construction, it is thus possible to maintain the
+is convenient to take the beads describing the sulfur atoms. Such        correct rotation axes between ring-systems linked through an
+dihedral represents the torsion between the thiophene rings, and         sp2 hybridized carbon, which is relevant, for example, for several
+a dihedral potential obtained from quantum mechanical calcu-             small molecules used in organic electronics.[36]
+lation (Vdih, QM ) can be directly implemented in such a construc-
+tion if nonbonded interactions are excluded between the two thio-
+phenes. If nonbonded interactions are not excluded, one should           2.2. Database Description
+instead introduce in the CG model a dihedral potential which is
+the reference Vdih, QM minus the energy proﬁle around that di-           A database containing 90 small molecules (see Table S2, Sup-
+hedral that one obtains at the CG level solely due to the non-           porting Information for the full list of molecules), is available at
+bonded interactions between adjacent thiophenes (the baseline            https://github.com/ricalessandri/Martini3-small-molecules and
+CG energy proﬁle around that dihedral, Vdih, CG ). Although the          on the Martini portal http://cgmartini.nl. The database com-
+latter option is of course legitimate and routinely done in QM-          prises small molecules containing a range of mono- and poly-
+based reﬁnement of AA force ﬁelds, its added complexity can be           cyclic aromatic and aliphatic structures, and covering most of
+conveniently sidestepped at the CG level by using exclusions be-         the chemical functional groups, thus including a wide range
+tween the two adjacent rings (which leads to a “ﬂat” Vdih, CG ). Let     of (bio)molecular building blocks. However, it is necessarily far
+us stress again that this is a very speciﬁc use of exclusions, and       from being complete. The models included serve as a guide
+does not apply in general to Martini models (see discussion of the       to build new models, or as building blocks to be used in
+use of exclusions in Martini in the previous subsection). Finally,       macromolecules such as proteins or synthetic polymers. For ex-
+the deﬁnition of this dihedral is also reminescent of the dummy-         ample, the side chains of the four aromatic amino acids—4-
+assisted dihedral described by Bulacu et al. in the context of in-       methylimidazole (histidine), p-cresol (tyrosine), toluene (pheny-
+creasing the numerical stability of CG models.[35] Indeed, by con-       lalanine), and 3-methyl-1H-indole (tryptophan)—have been de-
+struction this dihedral prevents bead collinearities which lead to       veloped as part of this database and are used in the Mar-
+numerical instabilities,[35] hence providing a numerically robust        tini 3 proteins.[24] Similarly, the database contains models for
+way of connecting rigid planar fragments whose relative dihedral         monomers of synthetic polymers, such as 3-hexylthiophene,
+angle can be controlled.                                                 which when polymerized—which can be done in an automated
+   Construction 3: A “Molecular Turn.” Ring-systems linked               fashion by the Polyply[37] program—constitutes the conjugated
+through an sp2 hybridized carbon represent one of the                    polymer poly(3-hexylthiophene).
+more complicated groups of small molecules to coarse-                       For every molecule, a two to ﬁve letter long string is used as
+grain within the Martini framework. As exempliﬁed by the                 unique identiﬁer (uID) and eight ﬁles are included, namely:
+2-(phenylmethylidene)cyclopent-4-ene-1,3-dione              molecule
+(PMCD, Figure 3c), this type of coupling induces a “molecular            1. uID.smiles: the SMILES string representing the molecule;
+turn” in the link between the two ring-systems, which calls for          2. uID.itp: the Martini 3 model topology, in GROMACS for-
+special attention to preserve the rotation axis for the torsional           mat;
+
+
+Adv. Theory Simul. 2022, 5, 2100391    2100391 (10 of 19)            © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                    25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                        www.advtheorysimul.com
+
+3. uID.gro: the Martini 3 model coordinates, in GROMACS for-          in GROMACS format, from the ATB server. [49,50] CHARMM
+   mat;                                                               General FF (CGenFF)[47,48] models were obtained by uploading
+4. uID_LigParGen.pdb: atomistic structure in PDB format as            a molecule (in .mol2 format) to https://cgenﬀ.umaryland.edu/
+   obtained from the LigParGen server[38–40] by entering the cor-     to obtain a .str ﬁle; subsequently, to obtain a topology in GRO-
+   responding SMILES;                                                 MACS format, both ﬁles were passed to cgenff_charmm2gmx.py
+5. uID_LigParGen.itp: OPLS-AA/1.14∗ CM1A-LBCC topology,               (using the July2017 version, charmm36-jul2017.ff.tgz,
+   in GROMACS format, as obtained from the LigParGen                  both downloaded from http://mackerell.umaryland.edu/
+   server[38–40] by entering the corresponding SMILES;                charmm_ﬀ.shtml. In the remainder of the article, we will
+6. uID_oplsaaTOcg_cgbuilder.ndx: the AA-to-CG index ﬁle;              refer to the AA force ﬁelds simply as OPLS, GROMOS, and
+7. uID_cgTOoplsaa_cgbuilder.map: the CG-to-AA mapping                 CHARMM.
+   ﬁle;                                                                  Liquid and Gas Phase Simulations. A liquid phase was approx-
+8. uID_LigParGen_cgbuilder.png: a screenshot showing the              imated as an equilibrated box of dimensions of about 5 × 5 × 5
+   beads and underlying atomistic structure.                          nm3 ; a gas phase as a single molecule occupying a large (7 × 7 × 7
+                                                                      nm3 ) simulation box. Liquid phase simulations were performed
+Mapping and index ﬁles were generated using CGBuilder (https:         in the NPT ensemble at 298 K and 1 bar, while gas phase ones in
+//jbarnoud.github.io/cgbuilder/), and then modiﬁed manually if        the NVT ensemble at 298 K. The enthalpy of vaporization (ΔHvap )
+necessary, for example, to introduce atom-sharing which is not        was computed as
+handled by CGBuilder. Table S2, Supporting Information lists the
+uID, common name, and SMILES string for all the molecules in          ΔHvap ≈ Ugas − Uliq + RT                                               (1)
+the database.
+   Reference and computed properties, needed to reproduce the         where Ugas and Uliq are the total energies (per mole) of the gas
+plots shown in this paper, are available at https://github.com/       and liquid phase, respectively (both extracted from NVT simu-
+ricalessandri/Martini3-small-molecules. Moreover, a tutorial on       lations). Densities were extracted with the GROMACS tool gmx
+how to parameterize a small molecule with Martini 3 is also avail-    density. For this analysis, we used, for each bead, the mass of
+able on the same GitHub repository and on the Martini portal          the constituting atoms rather than the typical bead masses that
+(http://cgmartini.nl).                                                were used for the simulation. By default Martini 3, like Martini
+                                                                      2, uses standard masses for regular, small, and tiny beads of 72,
+                                                                      54, and 36 Da, respectively.
+2.3. Simulation Settings and Procedure Details                           Free Energies of Transfer Calculations. We used alchemical
+                                                                      transformations to compute free energies of solvation ΔGS→Ø in
+General Simulation Settings. Settings for the CG simulations ad-      a solvent S. ΔGs were computed between water (W) and a num-
+here to the “new” set of Martini run parameters,[41] using a time     ber of organic phases, namely hexadecane (HD), (hydrated) oc-
+step of 20 fs. Speciﬁcally, the Verlet neighbor search algorithm      tanol (OCO), and chloroform (CLF). In Martini 3, these are de-
+was used to update the neighbor list, with a straight cutoﬀ of        scribed by a W, C1-C1-C1-C1, SC2-SC2-SP1, and X2 model,[24]
+1.1 nm. The Parrinello–Rahman barostat[42] (coupling parame-          respectively. Note that we simulate hydrated octanol, that is we
+ter of 12.0 ps) and the velocity-rescaling thermostat[43] (coupling   add a ≈0.3 mole fraction of water according to experimental
+parameter of 1.0 ps) were used to maintain pressure and temper-       conditions.[51] A series of 21 simulations with equally spaced 𝜆
+ature, respectively. CG simulation setting ﬁles are available on      points going from 0 to 1 were performed using a stochastic inte-
+the Martini portal http://cgmartini.nl and at https://github.com/     grator. Simulations were equilibrated for 2 ns and each 𝜆 point
+ricalessandri/Martini3-small-molecules. A unique set of atom-         was run for 10 ns. A soft-core potential (with 𝛼 of 0.5 and power
+istic run parameters was used for the AA simulations, using           set to 1) was used to avoid the singularity in the potential when
+a time step of 2 fs. The Verlet neighbor search algorithm was         interactions were switched oﬀ. The free energies and correspond-
+employed to update the neighbor list; a 1.4 nm cutoﬀ for LJ           ing errors were ﬁnally computed using the multistate Bennett ac-
+and for Coulomb (reaction-ﬁeld) interactions was employed. The        ceptance ratio.[52] The free energy associated with transferring a
+Parrinello–Rahman barostat[42] (coupling parameter of 5.0 ps)         solute from a solvent S1 to a solvent S2 (ΔGS1 →S2 ) was computed
+and the Nosé-Hoover thermostat[44,45] (coupling parameter of 1.0      as the diﬀerence ΔGS1 →Ø − ΔGS2 →Ø .
+ps) were used to maintain pressure and temperature, respec-              Dimerization Free Energy Surface Calculations. Free energy
+tively. All simulations were run with GROMACS [32] 2016.x or          surface (FES) proﬁles for the dimerization of each molecule
+2019.x.                                                               were computed by either umbrella sampling (US)[53] or (well-
+   All-Atom Models: For every molecule in the database, a OPLS-       tempered[54] ) metadynamics (MTD)[55] simulations. In US
+AA/1.14∗ CM1A-LBCC model was obtained from the LigParGen              simulations, the two solute molecules were placed in a box and
+server[38–40] by entering the SMILES string of the small molecule;    solvated. Umbrella windows were spaced 0.1 nm apart along
+for each molecule, a coordinate ﬁle (pdb format) and a topol-         the collective variable (CV), this being the distance between
+ogy ﬁle in GROMACS format (itp) were obtained. Additional             the COGs of the two solute molecules. For each window, this
+all-atom models for a selected number of small molecules (for         distance was kept ﬁxed by an umbrella potential with a force
+example the ones for which free energy surfaces of dimerization       constant of 1500 kJ mol−1 nm−2 . Each window was simulated
+were computed, see Section 3.4) were obtained with either the         for at least 150 and 500 ns in the case of AA and CG systems,
+GROMOS 54A7[46] or the CHARMM General FF (CGenFF)[47,48]              respectively. The FES proﬁles were calculated using the weighted
+force ﬁelds. GROMOS 54A7[46] all-atom models were obtained,           histogram analysis method (WHAM)[56] as implemented in the
+
+
+Adv. Theory Simul. 2022, 5, 2100391   2100391 (11 of 19)          © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                     25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                         www.advtheorysimul.com
+
+GROMACS tool gmx wham. In MTD simulations, the bias was                3. Results and Discussion
+added on both the distance between the COGs of the two small
+molecules and the torsional angle formed by atoms of the small         3.1. Partitioning Behavior: Free Energies of Transfer
+molecules and their COGs in the case of AA simulations. In
+the CG simulations, the eﬃciency of Martini allowed us to use          We ﬁrst examine the performance of the new models in
+only the distance between the COG of the molecules as a CV             reproducing experimental free energies of transfer, as par-
+and obtain converged proﬁles. Simulations were 100–150 ns or           titioning between diﬀerent solvents constitutes the main
+1 𝜇s long in the AA and CG case, respectively. cos 𝜃 (where 𝜃 is       target of the Martini force ﬁeld parametrization. Transfer
+the angle between the two vectors perpendicular to the planes          free energies of all the molecules in the database have
+of the two molecules), which describes the relative orientation        been thus computed and compared to available experimental
+of the ring planes, was used as a third CV to project the FES by       data[59–64] in order to settle on consistent mappings for all the
+using a reweighting algorithm.[57] The height of the deposited         molecules in the database. Experimental data are mainly avail-
+Gaussians was set to 1.0 kJ mol−1 and the width to 0.05 nm and         able for hexadecane→water (HD→W), (hydrated) octanol→water
+0.2 rad for the distance and torsion, respectively. Gaussians were     (OCO→W) and chloroform→water (CLF→W) partitioning[59–64]
+deposited every 500 steps and the bias factor was set to 5. A wall,    (see Section 2.3 for the solvent models). Figure 4 displays the
+in the form of a harmonic potential with a force constant of 200       performance of the ﬁnal models with respect to partitioning by
+kJ mol−1 , was added at a distance beyond 2 nm to prevent the          showing computed versus experimental free energies in these
+molecules from exploring conformations at distances irrelevant         three cases. The agreement is excellent in all three cases, with
+to binding. Block analysis was used to estimate the error from         a mean absolute error of 1.8, 1.8, and 2.2 kJ mol−1 , for HD→W,
+the free energy calculations (https://plumed.github.io/doc-            OCO→W, and CLF→W, respectively.
+v2.4/user-doc/html/trieste-4.html). Both US and MTD FES
+need to be entropy corrected and shifted so that the free energy       3.2. Solvent Properties: Enthalpies of Vaporization and Densities
+at large distances (1.7–2.0 nm) is very close to zero. A stochastic
+integrator was employed in both US and MTD simulations. All            We now examine the performance of the small molecule mod-
+simulations were performed with GROMACS 2016.x,[32] patched            els in reproducing mass densities and enthalpies of vaporization
+with PLUMED 2.4[58] in the case of the MTD simulations.                (ΔHvap ), a secondary parametrization target of the Martini 3 force
+   Binary Mixture Simulations. An equal number, namely 500,            ﬁeld. We computed mass density and ΔHvap for the CG models
+of molecules of species A and B was placed randomly in a sim-          presented here, and compared them to experimental values,[65]
+ulation box of dimensions 9 × 9 × 9 nm3 . The box was then en-         where available; the results are shown in Figure 5, where the CG
+ergy minimized, simulated at a higher pressure (100 bar) for 1         values are computed as described in Section 2.3. In the case of the
+ns and then subsequently relaxed for 1 ns in the NPT ensem-            enthalpies of vaporization (Figure 5a,b), we also report the values
+ble at 1 bar and 300 K. Simulations were then run in the same          for simpler, linear Martini 3 molecules,[24] in order to show the
+ensemble for at least 400 ns. Miscibility was monitored follow-        overall trend of ΔHvap of the Martini 3 force ﬁeld. Indeed, we re-
+ing the number of A–B contacts with the GROMACS tool gmx               mark that Martini enthalpies of vaporization are notoriously sys-
+mindist, with a cutoﬀ distance of 0.6 nm, which comprises the          tematically underestimated due to the limited ﬂuid range of the
+nearest neighbor CG sites around a CG particle. Typical evolu-         employed 12-6 Lennard–Jones potential form.[8] Normalizing the
+tions of the number of A–B contacts as a function of simulation        data by dividing by the ΔHvap of water leads to the correlation
+time for mixtures with miscible and immiscible components are          plot presented in Figure 5b. Moreover, we recall[11] that Martini
+shown in Figure S6a, Supporting Information.                           2 ring-like models deviate from the overall force ﬁeld trend and
+   Vapor–Liquid Equilibrium Simulations. Vapor–liquid equilib-         lead to systematically higher heat of vaporizations. This deviation
+rium simulations were performed by setting up systems of di-           was related to the “overmapping” of such molecules and the im-
+mensions 7 × 7 × Z nm3 where Z ranges from ≈12 to ≈16 nm               perfect S-bead calibration.[11] This is now overcome in Martini 3,
+depending on the mixture (benzene–cyclohexane, or benzene–             where all the small-molecules containing ring-like structures lie
+chloroform; note that in the case of cyclohexane we used a model       in the general trend of the Martini force ﬁeld.
+with a bond length of 0.385 nm); at least 7 nm of the Z dimension         Computed mass densities for the solvents are overall in good
+is empty—constituting the starting conﬁguration for the vapor          agreement with experimental densities: the mean absolute per-
+phase. The remaining of the box contains a 50:50 mixture of two        centage error is 5.8%. This is shown in Figure 5c, where CG ver-
+components—the starting conﬁguration for the liquid phase. A           sus experimental densities are plotted. Unsurprisingly, not only
+rendering of this setup is shown in Figure 6c. Such starting sim-      the LJ parameters but also the bond lengths used in the models
+ulation boxes were set up for all the compositions possible from       have a large impact on the ﬁnal densities of the simulated sol-
+xA = 0 to xA = 1 in steps of 0.05 where xA is the molar fraction       vents. As anticipated earlier, bond lengths obtained from COG-
+of component A in the mixture. The vapor–liquid binary systems         mapped structures in general lead to good molecular and bulk
+were then simulated for at least 2 𝜇s at each xA in the NVT en-        properties. For example, such bond lengths allow for a good re-
+semble at 300 K. This leads to statistically reliable vapor and liq-   production of the solvent accessible surface area (SASA) of the
+uid densities which can be extracted with the GROMACS tool gmx         AA model, as shown in Figure S5b, Supporting Information.
+density, as described more in detail in Supporting Information.        This also translates into good agreement in case of mass den-
+The equilibrium densities thus obtained were then used to com-         sities (see Figure S5a, Supporting Information, mean absolute
+pute the ΔGsolv,i of the ith component in the mixture according        percentage error of 7.2 %). However, given the lower resolution
+to Equation (3) as described in Section 3.3.                           of the model, perfectly matching densities cannot be obtained
+
+
+Adv. Theory Simul. 2022, 5, 2100391   2100391 (12 of 19)           © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                                25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                                   www.advtheorysimul.com
+
+
+
+
+Figure 4. Partitioning behavior of Martini 3 small molecules. a) Computed data are plotted against experimental data in the cases of hexadecane→water
+(gray circles), octanol→water (red circles), and chloroform→water (gold circles). b) the same data are plotted by discriminating aliphatic (blue squares)
+and aromatic (green triangles) small molecules. Experimental data have been compiled from refs. [59–64]. Statistical uncertainty for the computed ΔG
+is below 0.3 kJ mol−1 and thus not visible in the plots.
+
+
+
+
+Figure 5. Solvent properties of Martini 3 small molecules: a,b) enthalpy of vaporization (ΔHvap ), c) mass density, and d) solvent accessible surface area
+(SASA). Data points corresponding to aromatic and aliphatic compounds are indicated by green triangles and blue squares, respectively. In (a–c), also
+linear molecules from ref. [24] are reported to show the general trend of the Martini 3 force ﬁeld. In (c) and (d), the dashed and the dotted lines indicated
+threshold error lines of ±5% and 10%, respectively. Experimental mass densities and enthalpies of vaporization are from ref. [65]. SASA reference values
+have been obtained with the OPLS all-atom force ﬁeld. For details on the SASA calculations, see Supporting Information.
+
+
+
+
+Adv. Theory Simul. 2022, 5, 2100391        2100391 (13 of 19)               © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                           25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                               www.advtheorysimul.com
+
+
+
+
+Figure 6. Miscibility of aromatic or aliphatic small molecules (and water): Martini 3 versus experiments. a) The experimental solvent miscibility tables
+is shown. Light color means miscible, dark means immiscible. The same mixing behavior is observed for Martini 3, so Martini fully reproduces the
+experimental miscibility table. Molecules are indicated by their uID: BENZ (benzene), CHEX (cyclohexane), DIOX (1,4-dioxane), THF (tetrahydrofuran),
+TOLU (toluene), and W (water). b) Comparison between Martini and experimental free energy of mixing (ΔGmix ) and excess free energy of mixing (ΔGex )
+for the benzene–cyclohexane mixture as a function of the mixture composition. x1 is the molar fraction of benzene. Experimental data are obtained from
+vapor–liquid equilibrium data.[76] Simulation data are obtained from vapor–liquid equilibrium simulations (see Experimental Section). Both experimental
+and CG data points are ﬁtted to quadratic equations. A rendering of the setup in shown in (c); small and tiny bead radii are rendered in scale.
+
+
+for all cases simply by following a COG-based mapping scheme.                 tables. The extracted experimental miscibility table is shown in
+Thus, bond lengths can be reﬁned further if higher accuracy is re-            Figure 6a; results for Martini 3 are in agreement with experimen-
+quired. This ﬁne-tuning was done for the models where the mis-                tal data, so Figure 6a also represent the Martini miscibility table
+match between the experimental and simulated densities was the                for ring-like small molecules (and water). In the simulations,
+highest. Thus, some of the topologies contained in the database               the miscibility was monitored following the number of contacts
+contain “optimized” bond lengths, which lead to correlation plot              between molecules A and molecules B of a equimolar A:B
+for the mass densities reported in Figure 5c—mean absolute per-               mixture. Starting from a random mixture of the two, where
+centage error of 5.8%—and for the SASA values reported in Fig-                each species makes a certain number of contacts with the other,
+ure 5d.                                                                       monitoring the number of contacts allows for detection of phase
+                                                                              separation (see also Experimental Section). Immiscible phases
+                                                                              readily demix (sharp decrease in the number of A–B contacts),
+3.3. Solvent Mixtures: Martini Miscibility Table                              while for miscible phases the average number of contacts re-
+                                                                              mains constant (see Figure S6a, Supporting Information for
+We tested the capabilities of the models further by examining                 typical evolution of number of A–B contacts for mixing and
+its performance in reproducing mixing behaviors of binary mix-                demixing binary mixtures).
+tures. Some force ﬁelds have been parameterized based on exper-                  A more quantitative estimation of how the new Martini model
+imental data on binary mixtures, such as vapor-liquid equilibria              performs with respect to solvent mixtures has then been carried
+(e.g., TraPPE),[66] while established force ﬁelds have been tested            out for the benzene-cyclohexane mixture. We computed the free
+for their performance in reproducing such equilibria[67] or other             energy of mixing (ΔGmix ) as a function of the composition of the
+related thermodynamic properties of mixtures (e.g., the free                  mixture. Considering a mixture of A and B, let xA (xB ) be the mole
+energy of mixing).[68] We performed mixing assays to estimate                 fraction of A (B) in the system, the (molar) ΔGmix is given by[69]
+whether two Martini solvent models mixed or not, and com-
+pared the observed behavior to reference experimental data. Data
+regarding the most common solvents are commonly available                     ΔGmix = ΔGex + TΔSid = [xA (𝜇A − 𝜇A∗ ) + xB (𝜇B − 𝜇B∗ )]
+as solvent miscibility tables. We selected the main aromatic or
+aliphatic ring-like small molecules which usually appear in such                        + RT(xA ln(xA ) + xB ln(xB ))                               (2)
+
+
+Adv. Theory Simul. 2022, 5, 2100391       2100391 (14 of 19)             © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                     25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                         www.advtheorysimul.com
+
+where 𝜇A (𝜇B ) is the chemical potential of component A (B) in         molecules rely heavily on constraints, we tested the impact of
+the mixture, and 𝜇A∗ (𝜇B∗ ) the chemical potential of component A      the LINCS[29] constraint settings on mixtures. Namely, we inves-
+(B) in its pure state. In this expression, the chemical potentials     tigated the impact on mixtures of small molecules by compar-
+represent the reversible work to solvate the two components (A         ing the default LINCS settings (lincs-order = 4; lincs-iter
+or B) in the mixture (𝜇A or 𝜇B ) or in their own liquid state (𝜇A∗     = 1; time step of 20 fs) versus more stringent LINCS settings
+or 𝜇B∗ ). As such, they correspond to the solvation free energies of   (lincs-order = 8; lincs-iter = 2) or a smaller time step (15
+the two components in the mixture and in their own liquid state.       fs). As shown in Figure S4, Supporting Information, we found no
+The ﬁrst term in Equation (2) can be referred to as the excess         signiﬁcant impact on three representative mixtures—benzene–
+free energy of mixing (ΔGex ), and has to do with the change in        cyclohexane, benzene–ethanol, and benzene–water—neither on
+interactions experienced by A and B in the mixture with respect        the mixing (as quantiﬁed by the number of contacts) nor on
+to their pure states. In the case of an ideal mixture, where the       eventual diﬀerences in temperatures between the molecules in-
+interactions between A (B) molecules are as strong as the A–B          volved. However, for larger molecules with multiple constraints
+interactions, this term vanishes (and the experimental manifes-        (such as cholesterol), we recommend the user to test these
+tation of it is Raoult’s law). The second term in Equation (2) is an   settings.
+entropic contribution (Sid ) due to the increased number of states
+available upon mixing (sometimes referred to as the ideal mixing
+free energy given the fact that it is the only term which remains      3.4. Stacking Interactions: Dimerization Free Energy Landscapes
+in the case of ideal mixtures).
+   The chemical potentials which appear in Equation (2), that is,      We now turn to describe the performance of the model by in-
+the solvation free energies of the two components in the mix-          vestigating local structural properties, that is, properties which
+ture and in their own liquid state, can be computed directly from      have to do with the “local” structure, such as molecular stacking
+the equilibrium vapor and liquid densities of a binary liquid-gas      or packing. In particular, we analyzed stacking behaviors for sev-
+system. Following the scheme of Ben–Naim,[69] the free energy          eral aromatic rings, given the ubiquitous role played by aromatic
+of solvation in the mixture ΔGsolv of the ith-component is given       structures in the self-assembly of soft matter. Figure 7 shows po-
+by:                                                                    tentials of mean force (PMFs) of dimerization in water for several
+                    (            )                                     representative aromatic compounds—at the Martini 3, Martini
+                        𝜌vap,i                                         2, and atomistic levels—along the distance between the COGs of
+ΔGsolv,i = RT ln                                                 (3)
+                        𝜌liq,i                                         the two molecules. PMFs have been obtained either via Umbrella
+                                                                       Sampling, or Metadynamics, as described in detail in Experi-
+where 𝜌vap,i and 𝜌liq,i are the vapor and liquid densities, respec-    mental Section. In particular, we analyze the following aromatic
+tively, of the ith component in the mixture at the given compo-        compounds: a–c) (poly)cyclic aromatic hydrocarbons, d) a hete-
+sition. We obtained the equilibrium densities via “direct” sim-        rocyclic ﬁve-membered ring, and e) mono-, and f) di-substituted
+ulations, that is, by simulating equilibrated binary liquid–vapor      aromatic compounds.
+systems (see Figure 6c and Experimental Section). Such simu-              Overall, the depth of the minima in Martini 3 is in good agree-
+lations can be very easily extended in the microsecond range           ment with the atomistic reference data, showing improvements
+with the Martini model, enough to obtain statistically reliable        with respect to Martini 2—in particular for the more hydropho-
+results on the equilibrium vapor and liquid densities. We did          bic compounds, such as benzene and thiophene. Moreover,
+this for the benzene–cyclohexane mixture along the whole range         desolvation barriers—the free energy barriers located between
+of compositions—from pure cyclohexane (x1 = 0) to pure ben-            the ﬁrst and the second minimum of each PMF—are reduced
+zene (x1 = 1) in steps of 0.05 in x1 . Figure 6b shows the ΔGmix       in Martini 3 as compared to Martini 2. This reduction is more
+and ΔGex computed according to Equation (2). The agreement             in line with the atomistic force ﬁelds. The improvement is due
+between simulated and experimental data is good. Experimen-            to the introduction of LJ cross-interaction sizes, as opposed to
+tally, benzene–cyclohexane deviates positively from Raoult’s law,      Martini 2 were these were absent.[8,11] Note that, in most of the
+showing less than ideal mixing. This feature is captured at the        cases, we compare to reference AA PMFs obtained with more
+Martini level. The simulated ΔGex is somewhat more positive            than one atomistic force ﬁeld, since diﬀerent force ﬁelds may
+than the experimental one over the whole composition range. It         provide diﬀerent reference PMFs, in particular when the size of
+measures 0.74 kJ mol−1 for an equimolar mixture (xA = 0.5), to         the molecule increases.[72] A second look at the data shows that,
+be compared to the experimental 0.37 kJ mol−1 . The benzene–           going from Figure 7a,c, that is, upon increasing the size of the
+chloroform mixture has also been investigated with the same ap-        aromatic system, the discrepancy between the overall shape of
+proach, and results are shown in Figure S6c, Supporting Infor-         the AA and Martini 3 PMFs decreases. This can be explained by
+mation. Again, the agreement between experiments and CG is             comparing the 2D free energy proﬁles of Figure 7g,h (AA) and
+good, when taking into account that the diﬀerence between the          Figure 7j,k (Martini 3). The free energy is now plotted on the
+ΔGex for the equimolar mixture is around 0.3 kJ mol−1 . We pro-        2D coordinate space formed by the distance between the COGs
+pose that vapor–liquid equilibrium data can be used to further         of the two molecules and the cosine of the angle (𝜃) between
+validate the miscibility of phases relevant to a certain application   the two vectors perpendicular to the planes of the two aromatic
+of the Martini force ﬁeld.                                             molecules. A value of cos 𝜃 close to 1 (𝜃 = 0◦ ) or −1 (𝜃 = 180◦ )
+   Given that evidence of constraints leading to temperature gra-      indicates that the two aromatic molecules are perfectly stacked,
+dient and miscibility artifacts in ternary lipid mixtures has been     that is, they are in a sandwich conformation. In contrast, cos 𝜃
+recently presented,[70,71] and that many of the (aromatic) small       values close to 0 (𝜃 = 90◦ ) denote a T-shaped conformation.
+
+
+Adv. Theory Simul. 2022, 5, 2100391   2100391 (15 of 19)           © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                          25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                              www.advtheorysimul.com
+
+
+
+
+Figure 7. 1D and 2D free energy surfaces of dimerization for several aromatic small molecules in water. a–f) The free energy is plotted along the
+distance between the COGs of the two molecules. The proﬁles obtained with Martini 3 (green solid lines) are shown along with the Martini 2 (red
+dash-dotted lines) and the atomistic (GROMOS[46] , OPLS[38] , or CHARMM[47,48] , dashed lines) ones; (a–c) show how the dimerization proﬁles change
+upon increasing the molecular size of (poly)cyclic aromatic hydrocarbons (benzene (a), naphthalene (b), and pyrene (c)); (d) shows the proﬁle for the
+ﬁve-membered heterocyclic aromatic compound thiophene; (e–f) show proﬁles for substituted aromatic compounds which possess a permanent dipole
+moment (chlorobenzene (e), and p-cresol (f)). g–l) The free energy surface is plotted on the 2D coordinate space formed by the distance used in (a–f)
+and cos 𝜃, where 𝜃 is the angle between the two vectors perpendicular to the planes of the two molecules; (g–i) are all-atom, and (j–l) are Martini 3
+surfaces. Molecular structures and mappings are shown as ﬁgure insets.
+
+
+
+
+Adv. Theory Simul. 2022, 5, 2100391      2100391 (16 of 19)             © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                     25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                         www.advtheorysimul.com
+
+For representative sandwich and T-shaped conformations, see            parametrization guidelines are expected to open up the possi-
+Figure S7e, Supporting Information.                                    bility of more easily model organic functional materials in gen-
+   Figure 7g,h show such 2D surfaces for benzene and pyrene,           eral. For example, modeling of organic semiconductors—the key
+respectively. It can be seen that in the case of the smaller ben-      components of organic solar cells, organic transistors, and or-
+zene, a T-shaped dimer conformation is preferred at the AA level       ganic bioelectronic devices to name but a few—and their mor-
+over the sandwich conformation. As the size of the molecule in-        phology is an area of particular richness and in need of compu-
+creases, there is a shift from the T-shaped minimum of benzene         tational insights at the length scales which can be reached with
+(and naphthalene, see Figure S7, Supporting Information) to the        Martini.[10,74] Organic semiconductors are rich in complex con-
+sandwich minimum of pyrene. This behavior is not captured by           jugated structures which can now be accurately modeled with
+the Martini models; instead, Martini predicts the two conforma-        Martini 3 and the advanced model design strategies described
+tions to be practically equivalent in terms of free energy for ben-    here.[36]
+zene, while it predicts decidedly the sandwich conformation to            Despite the numerous improvements and even wider ap-
+be the global minimum for the larger naphthalene and pyrene            plications opened up by Martini 3, limitations of this coarse-
+molecules. The T-shaped minimum of benzene is known to be a            graining approach must be kept in mind. Certain limitations
+consequence of the quadrupole moment driving the interaction           apply generally to the Martini force ﬁeld,[8,24,75] and include a
+between the two molecules (given the null dipole moment). The          nonquantitative agreement with experimental free energies of
+quadrupole interaction appears to be the dominant driving force        solvation and narrower ﬂuid ranges due to the use of the 12-6
+also in the case of naphthalene, as the sandwich conformation          Lennard-Jones potential, and an entropy–enthalpy imbalance—
+does not appear to be a minimum of the free energy landscape           due to enthalpy compensating for the loss of degrees of free-
+(Figure S7b, Supporting Information). However, as the size of the      dom upon coarse-graining—which is known to aﬀect the tem-
+molecule increases, the “cavity cost” prevails over the quadrupo-      perature dependence of several properties,[10,24] Other limitations
+lar interaction, leading to a sandwich interaction which maxi-         pertain more speciﬁcally to the systems subject of the present
+mizes the water-water contacts. Standard Martini 3 models for          study, namely small-molecules containing ring-like structures
+benzene and naphthalene will not be able to capture this eﬀect,        described by ﬁner mappings. As shown in Section 3.4, confor-
+which is driven by the speciﬁc distribution of charges which is        mations driven by quadrupolar interactions, such as T-shaped
+absent in the models, and only accounted for eﬀectively within         stacking, are not captured by standard Martini models due to
+the LJ parameters. In contrast, the “hydrophobic eﬀect” is intrin-     the lack of speciﬁc electrostatic interactions. Care must be taken
+sically captured by Martini. However, when the dominant interac-       thus if such quadrupolar interactions are expected to be driv-
+tion is not a quadrupolar one, Martini 3 models are now expected       ing a particular self-assembly process. The inclusion of partial
+to reproduce experimental stacking distances—as can be seen in         charges may remedy to this, and this is now possible in Mar-
+Figure 7c for pyrene—such as the one of conjugated polymers            tini 3 thanks to the “q” labels.[24] Exploring such an avenue
+which were previously systematically oﬀ due to the larger size of      is a natural possibility now opened up by the increased ﬂexi-
+S-beads.[33]                                                           bility of Martini 3. Additional model reﬁnement is also made
+   The fact that Martini favors sandwich conformations with re-        possible in Martini 3 by the introduction of the so-called self-
+spect to T-shaped ones also explains the better agreement of           interaction labels. These more generic labels decrease or in-
+the free energy proﬁles of chlorobenzene (CLBZ) and p-cresol           crease the self-interaction of a certain bead type without chang-
+(PCRE) of Figure 7e,f. Indeed, the 2D free energy landscape of         ing its free energy of transfer. Accordingly, they allow for quick
+Figure 7i (CLBZ) show the dominance of the sandwich confor-            model reﬁnement and, together with the wider bead type se-
+mation in molecules with a permanent dipole moment such as             lection and the other labels, are expected to greatly reduce the
+CLBZ (and PCRE, Figure S7a, Supporting Information). This is           need for the development of ad hoc beads. Finally, although
+again captured by Martini 3 (Figure 7k and Figure S7c, Support-        some model design strategies have been formulated in the
+ing Information).                                                      present work, building models for extended planar (polymeric)
+                                                                       systems can be challenging and time-consuming, as the ex-
+                                                                       tended networks of constraints often required by such struc-
+3.5. Possible Applications and Limitations                             tures easily lead to numerical instabilities. To fully harness the
+                                                                       capabilities of Martini 3 CG modeling of (small) molecules,
+The present database, along with the outlined model design             such strategies need to be implemented in the next-generation
+strategies and the modularity of the Martini force ﬁeld, open          of programs aimed at automated topology building of Martini
+up possibilities to more easily model complex (bio)molecular           models.[12,26,28]
+systems. On the biomolecular side, a natural application of the           In conclusion, we presented how small molecules can be accu-
+small molecules presented here combined with the Martini pro-          rately parameterized within the Martini 3 framework, and initi-
+tein models[24] is to investigate protein–ligand interactions in       ated a database of validated small molecule models. The present
+unbiased or biased MD simulations.[21,73] The parametrization          database, along with the outlined model design strategies and
+guidelines and strategies are expected to facilitate the building of   the modularity of the Martini force ﬁeld, constitute a resource
+databases with accurate Martini 3 models of small molecules; this      of models that 1) can be used “as is” in (bio)molecular simu-
+possibly will require the help of the next-generation of programs      lations; 2) gives reference points for the construction of other
+aimed at automated topology building of Martini models,[12,26,28]      small molecule models; 3) provides guidelines and reference data
+and automated parametrization of bonded parameters.[25,27]             for automated topology builders; and 4) can be used as building
+On the materials science side, Martini 3 and the presented             blocks for the construction of more complex (macro)molecules,
+
+
+Adv. Theory Simul. 2022, 5, 2100391   2100391 (17 of 19)           © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                                      25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                                        www.advtheorysimul.com
+
+hence enabling investigations of complex biomolecular[21,73] and                   [13] M. N. Melo, H. I. Ingólfsson, S. J. Marrink, J. Chem. Phys. 2015, 143,
+soft material systems.[10,74]                                                           24.
+                                                                                   [14] P. S. Schmalhorst, F. Deluweit, R. Scherrers, C.-P. Heisenberg, M.
+                                                                                        Sikora, J. Chem. Theory Comput. 2017, 13, 10.
+                                                                                   [15] S. Genheden, J. Comput. Aided Mol. Des. 2017, 31, 10.
+Supporting Information                                                             [16] H. Lee, A. H. de Vries, S. J. Marrink, R. W. Pastor, J. Phys. Chem. B
+Supporting Information is available from the Wiley Online Library or from               2009, 113, 40.
+the author.                                                                        [17] J. J. Uusitalo, H. I. Ingólfsson, P. Akhshi, D. P. Tieleman, S. J. Marrink,
+                                                                                        J. Chem. Theory Comput. 2015, 11, 8.
+                                                                                   [18] A. C. Stark, C. T. Andrews, A. H. Elcock, J. Chem. Theory Comput. 2013,
+                                                                                        9, 9.
+Acknowledgements                                                                   [19] G. Rossi, L. Monticelli, S. R. Puisto, I. Vattulainen, T. Ala-Nissila, Soft
+                                                                                        Matter 2011, 7, 2.
+R.A. thanks the Dutch Research Council (NWO) (Graduate Programme
+                                                                                   [20] L. Monticelli, J. Chem. Theory Comput. 2012, 8, 4.
+Advanced Materials, No. 022.005.006) for ﬁnancial support, and Maria
+Tsanai for preliminary tests on Martini 3 numerically unstable, T-bead-            [21] P. C. T. Souza, S. Thallmair, P. Conﬂitti, C. Ramírez-Palacios, R.
+rich systems. J.B. acknowledges funding from the TOP grant from S.J.M.                  Alessandri, S. Raniolo, V. Limongelli, S. J. Marrink, Nat. Commun.
+(NWO) and the EPSRC program grant no. EP/P021123/1. This work was                       2020, 11, 3714.
+partly carried out on the Dutch national e-infrastructure with the sup-            [22] L. I. Vazquez-Salazar, M. Selle, A. H. de Vries, S. J. Marrink, P. C. T.
+port of SURF Cooperative. A.S.G.’s work has been performed under the                    Souza, Green Chem. 2020, 22, 7376.
+Project HPC-EUROPA3 (INFRAIA-2016-1-730897), with the support of the               [23] J. Liu, L. Qiu, R. Alessandri, X. Qiu, G. Portale, J. Dong, W. Talsma,
+EC Research Innovation Action under the H2020 Programme; in particu-                    G. Ye, A. A. Sengrian, P. C. T. Souza, M. A. Loi, R. C. Chiechi,
+lar, A.S.G. gratefully acknowledges the support of S.J.M. at the University             S. J. Marrink, J. C. Hummelen, L. J. A. Koster, Adv. Mater. 2018,
+of Groningen and the computer resources and technical support provided                  30, 7.
+by SURFsara.                                                                       [24] P. C. T. Souza, R. Alessandri, J. Barnoud, S. Thallmair, I. Faustino, F.
+                                                                                        Grünewald, I. Patmanidis, H. Abdizadeh, B. M. H. Bruininks, T. A.
+                                                                                        Wassenaar, P. C. Kroon, J. Melcr, V. Nieto, V. Corradi, H. M. Khan, J.
+                                                                                        Domański, M. Javanainen, H. Martinez-Seara, N. Reuter, R. B. Best,
+Conﬂict of Interest                                                                     I. Vattulainen, L. Monticelli, X. Periole, D. P. Tieleman, A. H. de Vries,
+The authors declare no conﬂict of interest.                                             S. J. Marrink, Nat. Methods 2021, 18, 382.
+                                                                                   [25] J. A. Graham, J. W. Essex, S. Khalid, J. Chem. Inf. Model. 2017, 57, 4.
+                                                                                   [26] P.     C.     Kroon,       co-workers,       https://github.com/marrink-
+                                                                                        lab/cartographer (accessed: July 2021).
+Data Availability Statement                                                        [27] C. Empereur-mot, L. Pesce, G. Doni, D. Bochicchio, R. Capelli, C.
+The data that support the ﬁndings of this study are openly available on                 Perego, G. M. Pavan, ACS Omega 2020, 5, 50.
+GitHub at https://github.com/ricalessandri/Martini3-small-molecules.               [28] T. D. Potter, E. L. Barrett, M. A. Miller, J. Chem. Theory Comput. 2021,
+                                                                                        17, 9.
+                                                                                   [29] B. Hess, H. Bekker, H. J. Berendsen, J. G. E. M. Fraaije, J. Comput.
+                                                                                        Chem. 1997, 18, 12.
+Keywords                                                                           [30] R. S. Nunes, D. Vila-Viosa, P. J. Costa, J. Am. Chem. Soc. 2021, 143,
+                                                                                        11.
+coarse-graining, Martini, molecular dynamics, small molecules
+                                                                                   [31] K. A. Feenstra, B. Hess, H. J. C. Berendsen, J. Comput. Chem. 1999,
+                                                                                        20, 8.
+                                              Received: September 14, 2021         [32] M. J. Abraham, T. Murtola, R. Schulz, S. Páll, J. C. Smith, B. Hess, E.
+                                                Revised: November 3, 2021               Lindahl, SoftwareX 2015, 1, 19.
+                                       Published online: December 30, 2021         [33] R. Alessandri, J. J. Uusitalo, A. H. de Vries, R. W. A. Havenith, S. J.
+                                                                                        Marrink, J. Am. Chem. Soc. 2017, 139, 3697.
+                                                                                   [34] D. Janeliunas, Self-Assembly of Facial Oligothiophene Amphiphiles,
+                                                                                        Ph.D. Dissertation, TU Delft, Delft University of Technology,
+  [1] M. L. Klein, W. Shinoda, Science 2008, 321, 5890.                                 2014.
+  [2] C. Peter, K. Kremer, Soft Matter 2009, 5, 4357.                              [35] M. Bulacu, N. Goga, W. Zhao, G. Rossi, L. Monticelli, X. Periole,
+  [3] J. J. de Pablo, Annu. Rev. Phys. Chem. 2011, 62, 555.                             D. P. Tieleman, S. J. Marrink, J. Chem. Theory Comput. 2013, 9,
+  [4] W. G. Noid, J. Chem. Phys. 2013, 139, 9.                                          8.
+  [5] M. G. Saunders, G. A. Voth, Ann. Rev. Biophys. 2013, 42, 73.                 [36] A. S. Gertsen, Multiscale Modelling of Organic Solar Cell Materials—
+  [6] H. I. Ingólfsson, C. A. López, J. J. Uusitalo, D. H. de Jong, S. M. Gopal,        morphology evolution in solution processed bulk heterojunctions, Ph.D.
+      X. Periole, S. J. Marrink, WIREs Comput. Mol. Sci. 2014, 4, 3.                    Dissertation, Technical University of Denmark, 2020.
+  [7] G. A. Voth, Coarse-Graining of Condensed Phase and Biomolecular Sys-         [37] F. Grünewald, R. Alessandri, P. C. Kroon, L. Monticelli, P. C. T. Souza,
+      tems, CRC Press, 2008.                                                            S. J. Marrink, arXiv:2105.05890 2021.
+  [8] S. J. Marrink, H. J. Risselada, S. Yeﬁmov, D. P. Tieleman, A. H. de          [38] W. L. Jorgensen, J. Tirado-Rives, Proc. Natl. Acad. Sci. U. S. A 2005,
+      Vries, J. Phys. Chem. B 2007, 111, 27.                                            102, 19.
+  [9] S. J. Marrink, D. P. Tieleman, Chem. Soc. Rev. 2013, 42, 16.                 [39] L. S. Dodda, I. Cabeza de Vaca, J. Tirado-Rives, W. L. Jorgensen, Nu-
+[10] R. Alessandri, F. Grünewald, S. J. Marrink, Adv. Mater. 2021, 33,                  cleic Acids Res. 2017, 45, W1.
+      24.                                                                          [40] L. S. Dodda, J. Z. Vilseck, J. Tirado-Rives, W. L. Jorgensen, J. Phys.
+[11] R. Alessandri, P. C. T. Souza, S. Thallmair, M. N. Melo, A. H. de Vries,           Chem. B 2017, 121, 15.
+      S. J. Marrink, J. Chem. Theory Comput. 2019, 15, 10.                         [41] D. H. de Jong, S. Baoukina, H. I. Ingólfsson, S. J. Marrink, Comput.
+[12] T. Bereau, K. Kremer, J. Chem. Theory Comput. 2015, 11, 6.                         Phys. Commun. 2016, 199, 1.
+
+
+Adv. Theory Simul. 2022, 5, 2100391          2100391 (18 of 19)                © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+                                                                                                                                                                25130390, 2022, 1, Downloaded from https://advanced.onlinelibrary.wiley.com/doi/10.1002/adts.202100391, Wiley Online Library on [31/10/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+www.advancedsciencenews.com                                                                                                  www.advtheorysimul.com
+
+[42] M. Parrinello, A. Rahman, J. App. Phys. 1981, 52, 12.                    [60] C. Hansch, A. Leo, D. Hoekman, D. Livingstone, Exploring QSAR: Hy-
+[43] G. Bussi, D. Donadio, M. Parrinello, J. Chem. Phys. 2007, 126, 014101.        drophobic, Electronic, and Steric Constants, Vol. 48, American Chemical
+[44] S. Nosé, Mol. Phys. 1984, 52, 2.                                              Society, Washington, D.C. 1995.
+[45] W. G. Hoover, Phys. Rev. A 1985, 31, 1695.                               [61] M. H. Abraham, H. S. Chadha, G. S. Whiting, R. C. Mitchell, J. Pharm.
+[46] N. Schmid, A. P. Eichenberger, A. Choutko, S. Riniker, M. Winger, A.          Sci. 1994, 83, 8.
+     E. Mark, W. F. van Gunsteren, Eur. Biophys. J. 2011, 40, 7.              [62] A. Klamt, V. Jonas, T. Bürger, J. C. W. Lohrenz, J. Phys. Chem. A 1998,
+[47] K. Vanommeslaeghe, E. Hatcher, C. Acharya, S. Kundu, S. Zhong, J.             102, 26.
+     Shim, E. Darian, O. Guvench, P. Lopes, I. Vorobyov, A. D. Mackerell      [63] M. H. Abraham, J. A. Platts, A. Hersey, A. J. Leo, R. W. Taft, J. Pharm.
+     Jr, J. Comput. Chem. 2010, 31, 4.                                             Sci. 1999, 88, 7.
+[48] W. Yu, X. He, K. Vanommeslaeghe, A. D. MacKerell Jr, J. Comput.          [64] S. Natesan, Z. Wang, V. Lukacova, M. Peng, R. Subramaniam, S.
+     Chem. 2012, 33, 31.                                                           Lynch, S. Balaz, J. Chem. Inf. Model. 2013, 53, 6.
+[49] K. B. Koziara, M. Stroet, A. K. Malde, A. E. Mark, J. Comput. Aided      [65] W. M. Haynes, CRC Handbook of Chemistry and Physics, CRC Press,
+     Mol. Des. 2014, 28, 3.                                                        Boca Raton, FL 2014.
+[50] M. Stroet, B. Caron, K. M. Visscher, D. P. Geerke, A. K. Malde, A. E.    [66] M. G. Martin, J. I. Siepmann, J. Phys. Chem. B 1998, 102, 14.
+     Mark, J. Chem. Theory Comput. 2018, 14, 11.                              [67] M. G. Martin, Fluid Phase Equilibria 2006, 248, 50.
+[51] L. Bernazzani, S. Cabani, G. Conti, V. Mollica, J. Chem. Soc., Faraday   [68] A. J. Sweere, J. G. E. M. Fraaije, J. Chem. Theory Comput. 2017, 13, 5.
+     Trans. 1995, 91, 649.                                                    [69] A. Y. Ben-Naim, Solvation Thermodynamics, Springer, Berlin, Heidel-
+[52] M. R. Shirts, J. D. Chodera, J. Chem. Phys. 2008, 129, 12.                    berg 2013.
+[53] J. Kastner, WIREs Comput. Mol. Sci. 2011, 1, 6.                          [70] M. Javanainen, B. Fabian, H. Martinez-Seara, arXiv:2009.07767 2020.
+[54] A. Barducci, G. Bussi, M. Parrinello, Phys. Rev. Lett. 2008, 100,        [71] S. Thallmair, M. Javanainen, B. Fábián, H. Martinez-Seara, S. J. Mar-
+     020603.                                                                       rink, J. Phys. Chem. B 2021, 125, 33.
+[55] A. Laio, M. Parrinello, Proc. Natl. Acad. Sci. U. S. A 2002, 99, 20.     [72] I. Patmanidis, R. Alessandri, A. H. de Vries, S. J. Marrink, Molecules
+[56] S. Kumar, J. M. Rosenberg, D. Bouzida, R. H. Swendsen, P. A. Koll-            2021, 26, 19.
+     man, J. Comput. Chem. 1992, 13, 8.                                       [73] P. C. T. Souza, V. Limongelli, S. Wu, S. J. Marrink, L. Monticelli, Front.
+[57] D. Branduardi, G. Bussi, M. Parrinello, J. Chem. Theory Comput. 2012,         Mol. Biosci. 2021, 8, 199.
+     8, 7.                                                                    [74] N. E. Jackson, J. Phys. Chem. B 2021, 125, 2.
+[58] G. A. Tribello, M. Bonomi, D. Branduardi, C. Camilloni, G. Bussi,        [75] Z. Jarin, J. Newhouse, G. A. Voth, J. Chem. Theory Comput. 2021, 17,
+     Comput. Phys. Commun. 2014, 185, 2.                                           2.
+[59] J. Sangster, J. Phys. Chem. Ref. Data 1989, 18, 3.                       [76] G. Scatchard, S. E. Wood, J. M. Mochel, J. Phys. Chem. 1939, 43, 119.
+
+
+
+
+Adv. Theory Simul. 2022, 5, 2100391       2100391 (19 of 19)              © 2021 The Authors. Advanced Theory and Simulations published by Wiley-VCH GmbH
+
