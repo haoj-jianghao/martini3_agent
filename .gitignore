@@ -4,3 +4,4 @@ runs/
 test.py
 tests/
 references/original
+.vscode/
