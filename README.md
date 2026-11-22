@@ -24,6 +24,23 @@ A file-by-file explanation of the code is in [`martini_harness/README.md`](marti
 - **The two differences:**
   - PACT's terminal ethyl bead, settled afterwards by counting only precedents with the same surroundings.
   - BZAC's benzylic bead, which has no exact precedent and is left to the agent's judgment.
+- **Water/octanol logP** of the Luna models (22 molecules with an auto-martini3 result; `runs/logp26-20261121/fe/`, REPORT.pdf):
+  - MAE 0.52 log units (R² 0.79), against 0.99 (R² 0.64) for auto-martini3 with the same protocol.
+  - Luna is closer to experiment for 14 of 22 molecules.
+  - The runs used 40 fs, checked against 20 fs on PIPL.
+
+**Mapping without an agent, larger molecules** (`runs/drug_mapping-20261122/REPORT.md`, 11 drug-like molecules with
+OPLS-lite topologies):
+- 4 have an all-exact P1 (paracetamol, aspirin, caffeine, diphenhydramine).
+- The rest need 1–5 beads without a precedent; transfluthrin and the steroid core of dexamethasone are mostly rule-based.
+
+**Against other mapping tools:**
+- **auto-martini3** (9 drugs; same file): splits amide and ester groups, which the harness rules refuse, and never
+  shares ring atoms; partitions identical for 2 molecules.
+- **Martini-Mapper** (all 37 molecules; `runs/mapper_compare-20261122/REPORT.md`):
+  - same partition for 8 of 37;
+  - beads with a precedent: 82 %, against 90 % for the harness;
+  - 6 molecules break harness rules (5-atom beads, a split ester, lone atoms).
 
 **Open:**
 - **Finalize-only failures:** a validation check that fails only at finalize does not reach repair.
@@ -83,6 +100,7 @@ tests/         test_calls.py (how calls report errors), test_index.py (prepared 
                test_golden.py + golden/ (replays against saved outputs)
 docs/          flow_of_information_CHXO.pdf and its builder, plan_evidence_records.md (plan and status)
 runs/          one folder per run; runs/logp26-20261121/ holds the 26-molecule batch (batch.py, analyze.py, REPORT.md)
+               and fe/ (logP free energies); drug_mapping-20261122/ and mapper_compare-20261122/ the mapping comparisons
 ```
 
 ## Setup
@@ -162,7 +180,7 @@ python -m martini_harness.build_index --out DIR  # writes elsewhere, for compari
 ## Tests
 
 - `tests/test_calls.py`: checks command and tool behavior, including parallel writes and Bible identity and bead lookups with `openpyxl` disabled.
-- `tests/test_partition.py`: the cover search finds the recorded partitions (first for PHAC and PIPL) and completes molecules the greedy assembly left open (4-methylpyridine, ethylene glycol); the shared ring style ranks first; `design_candidate` refuses a divided ester and a lone-atom bead and accepts an exception only when it names a reference; the research step records and chooses a partition and an override needs a reason; bond caps keep 10 timesteps; a failed GROMACS test is retried with another seed; bead surroundings.
+- `tests/test_partition.py`: the cover search finds the recorded partitions (first for PHAC and PIPL) and completes molecules the greedy assembly left open (4-methylpyridine, ethylene glycol); the search is bounded by exactness and keeps covers distinct up to symmetry (diphenhydramine's all-exact partitions); the shared ring style ranks first; `design_candidate` refuses a divided ester and a lone-atom bead and accepts an exception only when it names a reference; the research step records and chooses a partition and an override needs a reason; bond caps keep 10 timesteps; a failed GROMACS test is retried with another seed; bead surroundings.
 - `tests/test_index.py`: the prepared indexes rebuild byte-identically; memberships reproduce their signatures and cover every heavy atom; FF300 types come from the ITPs; method excerpts are the cited lines; the CHXO typing evidence selects the Table 24 ketone row.
 - `tests/test_golden.py`: replays the recorded CHXO, PHAC and PIPL designs and compares the results with `tests/golden/expected/` (decisions, bonded terms, files and SASA exactly; GROMACS checks as pass/fail). Rewrite the expected files with `tests/golden/make_golden.py` only when a change of outputs is intended.
 
@@ -219,4 +237,7 @@ Calls use `request_timeout_s` (300 s), `reasoning_effort: low`, `temperature: 0`
 - 2026-11-21, exact-cover search: candidate partitions are now covers of a bead pool (projected beads, their other exact placements, precedent-backed connected sets, open sets) found by backtracking, instead of one reference's beads completed greedily. Dry run of the 26 logP-benchmark molecules: a pipeline choice for all 26 (11 had none before), every bead exact in 25.
 - 2026-11-21, after the logP-benchmark batch (`runs/logp26-20261121/REPORT.md`): bond and angle limits use a 10-timestep period (GROMACS guideline; caps T 17,765, S 26,648, R 35,531 kJ/mol/nm2, from the bead masses); a failed GROMACS test is repeated with random_seed + 1 and + 2 before repair (`test/retries.json`, flagged as marginal stability in `validation.json`); minimisation ending above 100 x emtol is noted in `report.md` as strain (information only); between equally exact partitions, rings whose beads share atoms rank first; when exact precedents disagree on a type, the evidence block gives each type's count, how many have the same surroundings and which is the partition's source, and the typing prompt says how to choose. Golden expectations regenerated (capped force constants only).
 - 2026-11-21: typing order for disagreeing precedents is the most precedents with the same surroundings (all precedents when none has them), then the partition's source as tie-break; the smoke-test bond check allows max(0.02 nm, half the bond's ensemble standard deviation).
+- 2026-11-22: water/octanol logP of the 22 Luna models with an auto-martini3 result (`runs/logp26-20261121/fe/`, 40 fs, benchmark protocol): MAE 0.52 vs 0.99 for auto-martini3.
+- 2026-11-22: mapping-only runs of 11 drug-like molecules (OPLS-lite topologies, `runs/drug_mapping-20261122/`) and comparisons with auto-martini3 and Martini-Mapper (`runs/mapper_compare-20261122/`).
+- 2026-11-22: the cover search is bounded by exactness and counts only covers distinct up to symmetry (user decision): on diphenhydramine the old cap of 500 raw covers was spent on mirror-image ring variants and missed the all-exact partitions. Of 37 test molecules (26 logP, 11 drugs) 35 keep their P1; diphenhydramine becomes all-exact, dasatinib takes a shared-atom ring; partitions more than one non-exact bead worse than the best are no longer listed (MTBE loses a flagged P2). Searches finish within the 50,000-step limit (at most about 7 s, dasatinib).
 - 2026-11-22: final run of the 26 molecules with Haiku and Luna (`final-haiku/`, `final-luna/`): 52/52 `execution_checked`, same topology for 24/26; `docs/flow_of_information_CHXO.pdf` follows a run with the current defaults.

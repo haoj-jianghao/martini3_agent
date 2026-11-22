@@ -14,7 +14,9 @@ from reference models onto the target. No bead types are chosen here (partition 
   has an indexed precedent; and connected sets of 2-4 heavy atoms without one (marked not exact). Beads that would
   cut an indivisible group or break the size rules are left out.
 - `cover_search(...)`: exact cover with weights: sets of pool beads in which every heavy atom's weights sum to
-  one, found by backtracking from the most constrained atom (exact beads tried first), with a step limit.
+  one, found by backtracking from the most constrained atom (exact beads tried first), bounded by exactness
+  (branches with more than one non-exact bead beyond the best cover found are not explored), keeping covers that
+  differ up to symmetry, with a step limit.
 - `assemble(...)`: the covers as ranked candidate partitions (with today's greedy assembly as the fallback when no
   cover is found); atoms left uncovered by a fallback candidate are reported with the Alessandri 2022 Table 1
   building blocks that fit them.
@@ -358,48 +360,88 @@ def bead_pool(mol, projs, precedents, similarity=None, max_exact=5, max_open=4):
     return list(pool.values())
 
 
-def cover_search(mol, pool, max_steps=50000, max_covers=500, make=None):
+COVER_SLACK = 1   # covers kept: at most this many non-exact beads more than the best cover found (alternatives)
+
+
+def cover_key(hv, cover):
+    """A cover's identity up to the molecule's symmetry: each bead as its multiset of (canonical atom rank, weight)."""
+    ranks = list(Chem.CanonicalRankAtoms(hv.mol, breakTies=False))
+    return frozenset(frozenset((ranks[hv.pos[i]], round(w, 3)) for i, w in b['members'].items()) for b in cover)
+
+
+def cover_search(mol, pool, max_steps=50000, max_covers=500, make=None, slack=COVER_SLACK):
     """Sets of pool beads in which every heavy atom's weights sum to one. Backtracking: the open atom with the
     fewest fitting beads is covered next, trying exact beads first and larger beads before smaller ones. With
     `make` (bead_maker), a branch whose open atoms form one connected piece that the rules allow as a bead (with the
-    weights left, for example half-shared ring atoms) is also closed with that piece as a filler bead."""
+    weights left, for example half-shared ring atoms) is also closed with that piece as a filler bead.
+
+    Bounded by exactness (user decision 2026-11-22): `best` is the fewest beads without an exact precedent in any
+    cover found so far; a branch that already holds more than best + `slack` such beads is not explored, and covers
+    beyond best + slack are dropped when a better cover appears. So the first ranking criterion does not depend on
+    the order of the search. Only covers that differ up to symmetry (`cover_key`) are kept and counted; when
+    `max_covers` are kept, a new cover replaces a kept one with more non-exact beads, or is skipped, and the search
+    goes on. `max_steps` (calls of the search, dead ends included) is the only limit on the work."""
     hv = Heavy(mol)
+    ranks = list(Chem.CanonicalRankAtoms(hv.mol, breakTies=False))
     left = {i: 1.0 for i in hv.ids}
     by_atom = {i: sorted((b for b in pool if i in b['members']),
                          key=lambda b: (not b['same_fragment'], -sum(b['members'].values())))
                for i in hv.ids}
-    covers, chosen, steps = [], [], [0]
+    pool_keys = {frozenset(b['members'].items()) for b in pool}
+    kept, chosen, steps = {}, [], [0]   # kept: symmetry key -> (non-exact count, cover)
+    best = [len(hv.ids)]
+    nonexact = [0]
 
     def fits(b):
         return all(left[i] - w >= -1e-6 for i, w in b['members'].items())
 
+    def add(cover):
+        n = sum(not b['same_fragment'] for b in cover)
+        if n > best[0] + slack:
+            return
+        key = frozenset(frozenset((ranks[hv.pos[i]], round(w, 3)) for i, w in b['members'].items()) for b in cover)
+        if key in kept:
+            return
+        if n < best[0]:
+            best[0] = n
+            for k in [k for k, (m, _) in kept.items() if m > n + slack]:
+                del kept[k]
+        if len(kept) >= max_covers:
+            worst = max(kept, key=lambda k: kept[k][0])
+            if kept[worst][0] <= n:
+                return
+            del kept[worst]
+        kept[key] = (n, list(cover))
+
     def search():
         steps[0] += 1
-        if steps[0] > max_steps or len(covers) >= max_covers:
+        if steps[0] > max_steps or nonexact[0] > best[0] + slack:
             return
         open_ = [i for i in hv.ids if left[i] > 1e-6]
         if not open_:
-            covers.append(list(chosen))
+            add(chosen)
             return
         if make and sum(left[i] for i in open_) <= 4.5:
             rest = {i: round(left[i], 3) for i in open_}
             comps = _components(hv, rest)
             if len(comps) == 1:
                 filler = make(comps[0])
-                if filler and frozenset(filler['members'].items()) not in {frozenset(b['members'].items()) for b in pool}:
-                    covers.append(list(chosen) + [filler])
+                if filler and frozenset(filler['members'].items()) not in pool_keys:
+                    add(chosen + [filler])
         atom = min(open_, key=lambda a: sum(1 for b in by_atom[a] if fits(b)))
         for b in by_atom[atom]:
             if fits(b):
                 for i, w in b['members'].items():
                     left[i] -= w
                 chosen.append(b)
+                nonexact[0] += not b['same_fragment']
                 search()
+                nonexact[0] -= not b['same_fragment']
                 chosen.pop()
                 for i, w in b['members'].items():
                     left[i] += w
     search()
-    return covers
+    return [c for _, c in sorted(kept.values(), key=lambda x: x[0])]
 
 
 def assemble(mol, projs, n_seeds=6, precedents=None, sasa=None, similarity=None, n_sasa=6):
@@ -417,10 +459,9 @@ def assemble(mol, projs, n_seeds=6, precedents=None, sasa=None, similarity=None,
     cands = []
     if precedents:
         pool = bead_pool(mol, projs, precedents, simf)
-        ranks = list(Chem.CanonicalRankAtoms(hv.mol, breakTies=False))
         seen = set()
         for cover in cover_search(mol, pool, make=bead_maker(mol, precedents, simf)):
-            key = frozenset(frozenset((ranks[hv.pos[i]], round(w, 3)) for i, w in b['members'].items()) for b in cover)
+            key = cover_key(hv, cover)
             if key in seen:
                 continue
             seen.add(key)
