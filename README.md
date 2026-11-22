@@ -4,14 +4,31 @@ Builds a Martini 3 coarse-grained GROMACS model of **one molecule** from its SMI
 
 A file-by-file explanation of the code is in [`martini_harness/README.md`](martini_harness/README.md). [`docs/flow_of_information_CHXO.pdf`](docs/flow_of_information_CHXO.pdf) follows one CHXO run through the code step by step (with file and line numbers), describes the LangGraph nodes, state and routing, the offline index build and every Python file, and has a debugging guide; rebuild it with `python docs/build_flow_pdf.py` after code changes. The current plan and its status are in [`docs/plan_evidence_records.md`](docs/plan_evidence_records.md).
 
-## Status (2026-11-21)
+## Status (2026-11-22)
 
-- **Typing is settled by the harness.** Before typing, the pipeline selects for each bead its rung-1 precedents and the matching rows of Souza SI Table 24/25 and Alessandri 2022 Table 1, with citations (`design evidence`). Typing agents make no document reads and take about 4 model calls (8.4 before, CHXO).
-- **Mapping is proposed by the harness.** The pipeline projects bead memberships of the most similar reference models onto the molecule and ranks the candidate partitions: complete and within the mapping rules first, then every bead with an exact precedent, then the **SASA band** (computed up front on the stage-4 ensemble, with each bead's size from its exact precedents; it reproduced the final SASA of earlier runs exactly), then the closest analogue (`design propose`). The research step records the best one; the mapping agent confirms or overrides it. `design_candidate` refuses lone-atom beads, oversized beads and divided chemical groups.
-- **Results** (live runs, `runs/compare-2026112*/REPORT.md`): PHAC and PIPL give one byte-identical model in every run with Haiku 5.5 and GPT-6 Luna, equal to the recorded designs. CHXO gives one of two defensible models (both ranked by the harness; the agent picks): the remaining source of variation. Cost about 2 ¢ per molecule; Luna takes about twice the model calls of Haiku at similar cost.
-- **Research without an agent** (`--research pipeline`): one Haiku run per molecule gave the same models as the research-agent runs, byte for byte, with 6–8 model calls instead of 12–14 and about 1.4 ¢ instead of 2.2 ¢ (`runs/compare-20261121-research/REPORT.md`). `pipeline` is the default since 2026-11-21.
-- **The pipeline chooses, the agent confirms** (default): one Haiku run per molecule: every mapping agent confirmed in 1 model call; 4–5 model calls and about 0.9 ¢ per molecule (2.2 ¢ with all agents), same models as before (`runs/compare-20261121-confirm/REPORT.md`).
-- **Open (partly superseded):** let the harness record the top projected partition when it is all-exact (agent confirms or overrides with a reason); refuse `design_hydrogens` that excludes every heavy atom's hydrogens; provenance file (step 2 of the plan); whether the research node is still needed (step 3).
+**What the harness does without a model** (default settings):
+- **Research:** opens and annotates the references a molecule needs (`design research`).
+- **Partitions:** builds candidate partitions by exact-cover search over beads from reference models. It ranks them: within the mapping rules, then every bead with an exact precedent, then the SASA band (computed up front on the stage-4 ensemble), then rings that share atoms, then the closest analogue. It records the best one as the choice.
+- **Typing evidence, per bead:** the bead size, its exact precedents and their surroundings, the type the typing order gives when precedents disagree, and the matching Table 24/25 and Alessandri Table 1 rows with citations.
+
+**What the agents do:**
+- **Mapping agent:** confirms or overrides the pipeline's choice. An override needs a recorded reason.
+- **Typing agent:** records each bead's type from that evidence.
+- **Repair agent:** acts only after a GROMACS test has failed with three seeds.
+
+**Results**, 26 molecules of the logP benchmark (`runs/logp26-20261121/REPORT.md`):
+- **Final run with the current code** (Haiku 5.5 and GPT-6 Luna, 26 molecules each):
+  - 52 of 52 runs `execution_checked`; every partition confirmed; no repairs, no model errors, no document reads.
+  - Same partition for 26 of 26 molecules, same topology for 24.
+  - Cost $0.30 (Haiku, 5.4 model calls per molecule) and $0.37 (Luna, 12.5).
+- **The two differences:**
+  - PACT's terminal ethyl bead, settled afterwards by counting only precedents with the same surroundings.
+  - BZAC's benzylic bead, which has no exact precedent and is left to the agent's judgment.
+
+**Open:**
+- **Finalize-only failures:** a validation check that fails only at finalize does not reach repair.
+- **Rationale vs recorded type:** nothing checks that a recorded type agrees with its rationale (one slip seen).
+- **Provenance:** the provenance file (step 2 of the plan) is not written yet.
 
 ## How it works
 
@@ -27,11 +44,11 @@ START → preflight → intake → research → mapping → mapping_gate → typ
 | `research` | code (default) or agent | `research: pipeline` (default since 2026-11-21): `design research` works without a model: it opens the sources of the projected partitions, the rung-1 sources of their beads and the closest other hits, annotates each with the reason, passes their bead views on, and **records the best-ranked partitions (at most two) and chooses the first**; the mapping agent then confirms or overrides that choice with a reason. `research: agent` (config key or `cli run --research agent`): an agent reviews ranked hits, opens, matches and annotates references and returns an evidence summary |
 | `mapping` | agent | Confirms or overrides the partition the research step chose (an override needs a reason of at least 40 characters), or, with `research: agent`, records and chooses candidates. Sees the projected partitions with their SASA (`design propose`); `candidate` refuses partitions that break the mapping rules |
 | `mapping_gate` | code | Is a candidate chosen? If not, mapping runs again (up to `gate_retries`) |
-| `typing` | agent | `bead` for every bead of the chosen candidate, `note`, `check`. Its task message carries, per bead, the rung-1 precedents and matching Souza SI Table 24/25 and Alessandri Table 1 rows with citations (`design evidence`) |
+| `typing` | agent | `bead` for every bead of the chosen candidate, `note`, `check`. Its task message carries, per bead, the size, the rung-1 precedents (when they disagree: each type's count, how many have the same surroundings, the partition's source, and the type the order gives: most precedents with the same surroundings, then the source as tie-break), and the matching Souza SI Table 24/25 and Alessandri Table 1 rows with citations (`design evidence`) |
 | `typing_gate` | code | `design.cmd_check`; if incomplete, typing runs again with its output |
 | `bonded_build` | code | `cgbuild` stages `bonded` and `build`; reads `static_checks.json` |
-| `test` | code | `cgbuild` stage `test` (GROMACS); reads `execution.json` |
-| `repair` | agent | After a failed static check or test (at most `max_repair_cycles`): changes mapping, sites or beads, then back to `typing_gate` |
+| `test` | code | `cgbuild` stage `test` (GROMACS); reads `execution.json`. A failure is run again with `random_seed` + 1 and + 2 before repair (`test/retries.json`); a pass with a later seed continues, flagged as marginal stability |
+| `repair` | agent | After a failed static check, or a test failed with three seeds (at most `max_repair_cycles`): changes mapping, sites or beads, then back to `typing_gate` |
 | `finalize` | code | `cgbuild` stage `finalize`, `multi_seed_check.check`, `sasa_check.check` |
 | `report` | model | Final message from the run's records only |
 
@@ -49,7 +66,8 @@ The method's rules are enforced by how the harness is built:
 ```
 config/harness.json   models per node, limits, paths (free OpenRouter models)
 config/haiku.json     the same with anthropic/claude-haiku-5.5 and no fallbacks
-config/luna.json      the same with openai/gpt-6-luna
+config/luna.json      the same with openai/gpt-6-luna (20 requests a minute)
+config/nemotron.json  the same with nvidia/nemotron-3-ultra-550b-a55b:free and no fallbacks
 environment.json     reference paths and local executable names
 references/          source documents and models; index/ holds the prepared indexes and src/ their curated inputs
 martini_harness/
@@ -64,7 +82,7 @@ martini_harness/
 tests/         test_calls.py (how calls report errors), test_index.py (prepared indexes), test_partition.py (mapping help),
                test_golden.py + golden/ (replays against saved outputs)
 docs/          flow_of_information_CHXO.pdf and its builder, plan_evidence_records.md (plan and status)
-runs/          one folder per run
+runs/          one folder per run; runs/logp26-20261121/ holds the 26-molecule batch (batch.py, analyze.py, REPORT.md)
 ```
 
 ## Setup
@@ -95,6 +113,10 @@ $PY -m martini_harness.cli graph
 
 # Tests (about 40 s, no LLM)
 $PY -m pytest tests -q
+
+# A batch of molecules from an index file, one lane (model, repeat) at a time, resumable
+bash -ic "$PY runs/logp26-20261121/batch.py final-haiku config/haiku.json [ID ...]"
+$PY runs/logp26-20261121/analyze.py final-haiku final-luna
 ```
 
 The CLI exits 0 even when the run ends `blocked` or a node fails; read the status line and `harness/events.log`.
@@ -140,7 +162,7 @@ python -m martini_harness.build_index --out DIR  # writes elsewhere, for compari
 ## Tests
 
 - `tests/test_calls.py`: checks command and tool behavior, including parallel writes and Bible identity and bead lookups with `openpyxl` disabled.
-- `tests/test_partition.py`: the projections find the partitions of the recorded CHXO, PHAC and PIPL designs without an agent; `design_candidate` refuses a divided ester and a lone-atom bead, and accepts an exception only when it names a reference.
+- `tests/test_partition.py`: the cover search finds the recorded partitions (first for PHAC and PIPL) and completes molecules the greedy assembly left open (4-methylpyridine, ethylene glycol); the shared ring style ranks first; `design_candidate` refuses a divided ester and a lone-atom bead and accepts an exception only when it names a reference; the research step records and chooses a partition and an override needs a reason; bond caps keep 10 timesteps; a failed GROMACS test is retried with another seed; bead surroundings.
 - `tests/test_index.py`: the prepared indexes rebuild byte-identically; memberships reproduce their signatures and cover every heavy atom; FF300 types come from the ITPs; method excerpts are the cited lines; the CHXO typing evidence selects the Table 24 ketone row.
 - `tests/test_golden.py`: replays the recorded CHXO, PHAC and PIPL designs and compares the results with `tests/golden/expected/` (decisions, bonded terms, files and SASA exactly; GROMACS checks as pass/fail). Rewrite the expected files with `tests/golden/make_golden.py` only when a change of outputs is intended.
 
@@ -161,20 +183,24 @@ Replays issue one command at a time, so they do not cover what only a live model
 | `graph.mmd` | The compiled graph |
 | `final_message.md` | The report node's message |
 
+Also in the molecule folder: `research/` (the atomistic ensemble and SASA used for the up-front SASA of candidate partitions), `test/retries.json` (the seeds a GROMACS test was run with) and `test_attempts/attemptN/` (earlier test folders).
+
 `decisions/design_log.jsonl` records the agent's decisions. `manifest.json` records the harness version, a hash of its code and prompts, and the hashes of the configured input files used for provenance.
 
 ## Models
 
 `models.default` sets every node's model; `models.<node>` overrides one node, and `models.fallbacks` are tried in order when a call fails.
+- `config/nemotron.json` uses `nvidia/nemotron-3-ultra-550b-a55b:free` alone: on the 26 molecules all runs `execution_checked` at $0, with about 12 model calls per molecule.
 - `config/harness.json` uses free OpenRouter models (`nvidia/nemotron-3-ultra-550b-a55b:free`, then `nvidia/nemotron-3.5-lightning:free` and `google/gemma-4-31b-it:free`). Free models have per-minute and per-day limits and change often; Gemma returned 429 on 2026-11-19. `openrouter/free` is not used, because it picks a different model per call.
 - `config/haiku.json` uses `anthropic/claude-haiku-5.5` ($0.10 / $0.50 per million input / output tokens on 2026-11-19) and 60 requests per minute.
-- `config/luna.json` uses `openai/gpt-6-luna` (same price on 2026-11-21). On the same harness it produced the same models as Haiku with about twice the model calls (`runs/compare-20261121-luna/REPORT.md`).
+- `config/luna.json` uses `openai/gpt-6-luna` (same price on 2026-11-21) at 20 requests per minute, OpenRouter's limit for new accounts. On the same harness it produced the same models as Haiku with about twice the model calls.
 
 Calls use `request_timeout_s` (300 s), `reasoning_effort: low`, `temperature: 0`. Temperature 0 does not make runs repeat: two Haiku runs of CHXO chose different partitions.
 
 ## Limits of this version
 
-- One molecule per command; no batch runner yet.
+- One molecule per command; batches run through `runs/logp26-20261121/batch.py` (one process per molecule).
+- A validation check that fails only at finalize (for example the smoke-test bond check) lowers the status but does not reach repair.
 - The indexes are prepared offline (`build_index.py`); runs only read them. Compare mode is outside this package.
 - No figure rendering: `pdf_page_text` gives text only.
 - Checkpoints are in memory (`InMemorySaver`), so a crashed run can't be resumed; the `state/` snapshots show each step.
@@ -190,3 +216,7 @@ Calls use `request_timeout_s` (300 s), `reasoning_effort: low`, `temperature: 0`
 - 2026-11-21, comparisons: `runs/compare-20261121` (prepared evidence: typing calls 8.4 → 3.7, no document reads), `runs/compare-20261121-mapping` and `-exact` (mapping help; PHAC and PIPL converge to one model), `runs/compare-20261121-luna` (GPT-6 Luna: same models). `docs/flow_of_information_CHXO.pdf` rebuilt for the current code, with the LangGraph design, every Python file and a debugging guide.
 - 2026-11-21, research without an agent: `design research` and the `research: agent | pipeline` switch (config key, `cli run --research`).
 - 2026-11-21, up-front SASA: `sasa_check.partition_sasa` scores every candidate partition before typing (ensemble cached in `research/`); ranking exact precedents → SASA → closest analogue; the research step records and chooses the best partition, the mapping agent confirms or overrides (user decisions).
+- 2026-11-21, exact-cover search: candidate partitions are now covers of a bead pool (projected beads, their other exact placements, precedent-backed connected sets, open sets) found by backtracking, instead of one reference's beads completed greedily. Dry run of the 26 logP-benchmark molecules: a pipeline choice for all 26 (11 had none before), every bead exact in 25.
+- 2026-11-21, after the logP-benchmark batch (`runs/logp26-20261121/REPORT.md`): bond and angle limits use a 10-timestep period (GROMACS guideline; caps T 17,765, S 26,648, R 35,531 kJ/mol/nm2, from the bead masses); a failed GROMACS test is repeated with random_seed + 1 and + 2 before repair (`test/retries.json`, flagged as marginal stability in `validation.json`); minimisation ending above 100 x emtol is noted in `report.md` as strain (information only); between equally exact partitions, rings whose beads share atoms rank first; when exact precedents disagree on a type, the evidence block gives each type's count, how many have the same surroundings and which is the partition's source, and the typing prompt says how to choose. Golden expectations regenerated (capped force constants only).
+- 2026-11-21: typing order for disagreeing precedents is the most precedents with the same surroundings (all precedents when none has them), then the partition's source as tie-break; the smoke-test bond check allows max(0.02 nm, half the bond's ensemble standard deviation).
+- 2026-11-22: final run of the 26 molecules with Haiku and Luna (`final-haiku/`, `final-luna/`): 52/52 `execution_checked`, same topology for 24/26; `docs/flow_of_information_CHXO.pdf` follows a run with the current defaults.

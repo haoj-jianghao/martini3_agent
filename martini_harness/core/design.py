@@ -488,8 +488,22 @@ def ranked_candidates(md, mol, top=25):
     projs = P.projections(mol, refs(), top=top)
     if not projs:
         return projs, []
-    return projs, P.assemble(mol, projs, precedents=precedents,
+    return projs, P.assemble(mol, projs, precedents=precedents, similarity=similarity_to(mol),
                              sasa=lambda parts, sizes: sasa_check.partition_sasa(md, parts, sizes=sizes))
+
+
+def similarity_to(mol):
+    """Morgan (radius 2) Tanimoto similarity of any indexed reference to the target, cached per call site."""
+    tfp = _FP.GetFingerprint(Chem.RemoveHs(mol))
+    cache = {}
+
+    def sim(rid):
+        if rid not in cache:
+            smi = refs().get(rid, {}).get('molecule', {}).get('smiles')
+            m = Chem.MolFromSmiles(smi) if smi else None
+            cache[rid] = DataStructs.TanimotoSimilarity(tfp, _FP.GetFingerprint(m)) if m is not None else 0.0
+        return cache[rid]
+    return sim
 
 
 def sasa_text(c):
@@ -606,7 +620,8 @@ def cmd_research(a):
             srcs = sorted({b['source'] for b in c['beads'] if b['source']})
             exact = sum(b['same_fragment'] for b in c['beads'])
             rec = {'id': f'P{cands.index(c) + 1}', 'proposed_by': 'pipeline',
-                   'beads': [{'name': f'B{j + 1}', 'members': {str(i): w for i, w in b['members'].items()}}
+                   'beads': [{'name': f'B{j + 1}', 'members': {str(i): w for i, w in b['members'].items()},
+                              'source': b['source']}
                              for j, b in enumerate(c['beads'])],
                    'summary': f"projected partition {P.spec([b['members'] for b in c['beads']])} (started from {c['seed']})",
                    'pros': [f"{exact} of {len(c['beads'])} beads hold exactly the fragment of an indexed bead", sasa_text(c)],
@@ -624,6 +639,31 @@ def cmd_research(a):
     save(md, des, 'research', vars(a))
 
 
+def surroundings(mol, members):
+    """What lies one bond outside a bead: one label per bond leaving it, sorted, e.g. ['C', 'c(ar)', 'O='].
+    Each label is the outside atom's element, '(ar)' if aromatic, '=' if it has a double bond. Members are
+    1-based heavy-atom ids of `mol` (hydrogens ignored)."""
+    inside = {i for i, w in members.items() if w > 0}
+    out = []
+    for i in inside:
+        for nb in mol.GetAtomWithIdx(i - 1).GetNeighbors():
+            j = nb.GetIdx() + 1
+            if nb.GetAtomicNum() > 1 and j not in inside:
+                dbl = any(bd.GetBondType() == Chem.BondType.DOUBLE for bd in nb.GetBonds())
+                out.append(nb.GetSymbol() + ('(ar)' if nb.GetIsAromatic() else '') + ('=' if dbl else ''))
+    return sorted(out)
+
+
+def precedent_surroundings(p):
+    """Surroundings of an indexed bead in its own molecule, or None when its atoms are not known."""
+    r = refs().get(p['reference_id'])
+    bead = next((b for b in (r or {}).get('beads', []) if b['name'] == p['bead']), None)
+    if not bead or not bead.get('members') or not r['molecule']['smiles']:
+        return None
+    m = Chem.MolFromSmiles(r['molecule']['smiles'])
+    return surroundings(m, {int(i): w for i, w in bead['members'].items()}) if m is not None else None
+
+
 def cmd_evidence(a):
     """Per bead (the chosen candidate's, or --atoms): rung-1 precedents and the method records that apply."""
     md = Path(a.moldir)
@@ -636,21 +676,76 @@ def cmd_evidence(a):
         if cand is None:
             die('no chosen candidate; give atoms=... or choose a candidate first')
         beads = [(b['name'], {int(i): w for i, w in b['members'].items()}) for b in cand['beads']]
+        bead_source = {b['name']: b.get('source') or '' for b in cand['beads']}   # 'REF_ID:BEAD' of the pipeline's partition
+    if a.atoms:
+        bead_source = {}
     rows = [r for r in C.method_evidence() if r['stage'] == 'typing']
     tables = {n: next(r for r in rows if r['id'] == f'MEV:souza-si:T{n}') for n in (17, 18, 19)}
+
+    def source_type(name, pre):
+        rid, _, bead = (bead_source.get(name) or '').rpartition(':')
+        return next((p['type'] for p in pre if p['reference_id'] == rid and p['bead'] == bead), None)
+    by_sig = {}                     # fragment signature -> (bead, its source's type): identical fragments, one type
+    for nm, mm in beads:
+        sg = signature(mol, mm)
+        st = source_type(nm, precedents(sg))
+        if st and sg not in by_sig:
+            by_sig[sg] = (nm, st)
     for name, mem in beads:
         sig = signature(mol, mem)
         n = sum(mem.values())
         print(f"{name}: atoms {','.join(f'{i}' if w == 1 else f'{i}:{w:g}' for i, w in mem.items())}  "
               f"fragment {frag_smiles(mol, list(mem))}  {n:g} heavy atoms  signature {sig}")
+        size = P.size_of(n)
+        print(f"  size: {size} bead ({n:g} heavy atoms; T up to 2.5, S up to 3.5, R above). A type chosen without an exact "
+              f"precedent (rung 2 or 3) must be a {size}-size type" + {'T': ' (T prefix)', 'S': ' (S prefix)', 'R': ' (no prefix)'}[size] + ".")
         pre = precedents(sig)
         if pre:
             by = {}
             for p in pre:
-                by.setdefault(p['type'], []).append(f"{p['reference_id']}:{p['bead']}")
+                by.setdefault(p['type'], []).append(p)
             print(f'  rung 1, {len(pre)} indexed bead(s) hold this fragment (source_bead=REF_ID:BEAD after design_open):')
-            for t, lst in sorted(by.items(), key=lambda x: -len(x[1])):
-                print(f'    {t:<6} {len(lst):>3}  {", ".join(lst[:6])}{" ..." if len(lst) > 6 else ""}')
+            if len(by) == 1:
+                for t, lst in by.items():
+                    ids = [f"{p['reference_id']}:{p['bead']}" for p in lst]
+                    print(f'    {t:<6} {len(lst):>3}  {", ".join(ids[:6])}{" ..." if len(ids) > 6 else ""}')
+            else:
+                env = surroundings(mol, mem)
+                src = bead_source.get(name) or ''
+                src_type = source_type(name, pre)
+                print(f"    the precedents DISAGREE on the type. This bead's surroundings (atoms one bond outside): "
+                      f"{', '.join(env) or 'none'}. Per type: count, how many have the same surroundings, examples:")
+                stats = {}
+                for t, lst in sorted(by.items(), key=lambda x: -len(x[1])):
+                    envs = [precedent_surroundings(p) for p in lst]
+                    match = [p for p, e in zip(lst, envs) if e == env]
+                    known = sum(e is not None for e in envs)
+                    stats[t] = (len(match), len(lst))
+                    first = (match or lst)[:4]
+                    print(f"    {t:<6} {len(lst):>3}  surroundings match {len(match)} of {known} known  e.g. " +
+                          ', '.join(f"{p['reference_id']}:{p['bead']}" for p in first))
+                sibling = by_sig.get(sig) if not src_type else None
+                if src_type:
+                    print(f"    The partition took this bead from {src}, whose type is {src_type}.")
+                elif sibling and sibling[0] != name:
+                    src_type = sibling[1]
+                    print(f"    The partition took this bead from {src or 'no indexed bead'}, which holds a different fragment; "
+                          f"bead {sibling[0]} holds the same fragment and its source's type is {src_type} "
+                          f"(identical fragments in one molecule take one type).")
+                else:
+                    print(f"    The partition took this bead from {src or 'no indexed bead'}, which is not among these precedents.")
+                # majority among the precedents with the same surroundings; all precedents when none has them
+                matched = any(m for m, _ in stats.values())
+                count = {t: (m if matched else n) for t, (m, n) in stats.items()}
+                top = max(count.values())
+                most = [t for t in stats if count[t] == top]
+                order = src_type if src_type in most else most[0]
+                why = (('the most precedents with the same surroundings' if matched
+                        else 'no precedent has the same surroundings: the most precedents')
+                       + (', and the partition\'s source breaks the tie' if len(most) > 1 and order == src_type else ''))
+                print(f"    In the instruction's order (the most precedents with the same surroundings, then the partition's "
+                      f"source as tie-break), that gives {order} ({why}). The choice and its reason are yours; name the "
+                      f"types not used.")
         else:
             print(f'  rung 1: no indexed bead holds this fragment ({n_signed()} checked)')
         hits = [r for r in rows if r['kind'] == 'table_row' and applies(r, mol, mem)]

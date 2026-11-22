@@ -39,22 +39,22 @@ BEND_LOW_DEG = 20.0           # SI C4 warns about angles around 0 and 180 deg al
 NEAR_LINEAR_TRIANGLE_DEG = 150.0
 BEND_FRACTION = 0.05
 TIMESTEP_PS = 0.02
-MIN_PERIOD_STEPS = 9.0        # with T beads, this gives kb = 2e4 kJ/mol/nm2, the Bartender constraint rule
+MIN_PERIOD_STEPS = 10.0       # the GROMACS guideline (grompp notes a bond whose period is below 10 timesteps);
+                              # 9 until 2026-11-21, which put capped T-T bonds at 9.4 steps (CINA)
 BOND_K_FLOOR = 700.0          # Souza SI C3 p.44: weaker bonds should be avoided
 DIAGONAL_TIE_NM = 0.01
 MAX_HULL_EDGE_NM = 0.6        # a longer Delaunay hull edge is a chord across a concave outline
 SIZE_NOTE = "Souza SI C4 p.45: use four real hinge beads and make the other ring beads virtual sites"
-BOND_K_CAP = {"T": 20000.0, "S": 30000.0, "R": 40000.0}   # kJ/mol/nm2, same-size pairs; proportional to mass
-
-
 def bead_size(bead_type):
     return bead_type[0] if bead_type[0] in "ST" else "R"
 
 
 def bond_k_cap(type_i, type_j):
-    """Harmonic mean of the two beads' caps, which equals scaling by the reduced mass (T-S: 24000)."""
-    a, b = BOND_K_CAP[bead_size(type_i)], BOND_K_CAP[bead_size(type_j)]
-    return 2 * a * b / (a + b)
+    """Largest bond k (kJ/mol/nm2) whose vibration keeps MIN_PERIOD_STEPS at the timestep: reduced mass of the two
+    beads times omega^2. Same-size pairs: T 17765, S 26648, R 35530 (9 steps gave 20000, 30000, 40000 until
+    2026-11-21); a mixed pair is the harmonic mean of the two same-size caps."""
+    mi, mj = SIZE_MASS[bead_size(type_i)], SIZE_MASS[bead_size(type_j)]
+    return mi * mj / (mi + mj) * _omega_limit_sq()
 
 
 def _omega_limit_sq():

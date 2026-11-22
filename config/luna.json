@@ -15,7 +15,7 @@
   "request_timeout_s": 300,
   "reasoning_effort": "low",
   "model_retries": 4,
-  "requests_per_minute": 60,
+  "requests_per_minute": 20,
   "limits": {
     "research_model_calls": 30,
     "mapping_model_calls": 25,

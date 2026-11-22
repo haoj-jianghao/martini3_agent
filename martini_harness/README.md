@@ -48,7 +48,7 @@ Loads a harness config (default `config/harness.json`) and the environment file 
 | `limit(key)` | An integer from `limits` (for example `research_model_calls`, `gate_retries`) |
 | `reference_roots()` | `generation_reference_paths` of `environment.json` as absolute paths: the only folders agents may read |
 
-**`load_config(path=None)`** is the only place that reads configuration, so another model set only needs `--config` (as `config/haiku.json` and `config/luna.json` do).
+**`load_config(path=None)`** is the only place that reads configuration, so another model set only needs `--config` (as `config/haiku.json`, `config/luna.json` and `config/nemotron.json` do). The config key `research` (`pipeline`, the default, or `agent`) selects how the research node works; `cli run --research` overrides it.
 
 ---
 
@@ -76,11 +76,11 @@ The science. `core/__init__.py` records where it came from.
 
 | Module | What it does | Called by |
 | --- | --- | --- |
-| `cgbuild.py` | Stages `input` (SMILES, conformers, frozen AA topology), `search`, `bonded`, `build` (files, static checks), `test` (GROMACS em, eq1, eq2, smoke), `finalize` (`validation.json`, `manifest.json`, `report.md`); `COMMANDS` maps stage names to `cmd_*` functions; `harness_provenance()` | `nodes.intake`, `Pipeline.stage` |
-| `design.py` | The design record: `cmd_init`, `atoms`, `hits`, `query`, `open`, `annotate`, `match`, `evidence`, `candidate`, `choose`, `hydrogens`, `vsite`, `bead`, `note`, `show`, `check`. Each change is saved to `decisions/design.json` and appended to `decisions/design_log.jsonl` with the file's hash. `namespace(cmd, moldir, **kw)` builds a command's arguments from the parser's defaults | `tools/design_tools.py` |
-| `partition.py` | Mapping help: rule checks of a partition (`issues`), bead-by-bead projection of reference models onto the target (`projections`), candidate assembly with filler beads and ranking (`assemble`: exact precedents, then SASA band, then closest analogue), Table 1 building blocks inside a set of atoms | `design.py` (`propose`, `research`, `candidate`) |
+| `cgbuild.py` | Stages `input` (SMILES, conformers, frozen AA topology), `search`, `bonded`, `build` (files, static checks), `test` (GROMACS em, eq1, eq2, smoke), `finalize` (`validation.json`, `manifest.json`, `report.md`); `COMMANDS` maps stage names to `cmd_*` functions; `harness_provenance()` Also: `examples()` and `method_evidence()` load the prepared indexes; `classify` builds `validation.json` (the smoke-test bond check allows max(0.02 nm, 0.5 × the bond's ensemble standard deviation), `BOND_DEV_MIN_NM`, `BOND_DEV_SD_FRACTION`); `write_report` adds an information note when minimisation ends above `EM_STRAIN_FACTOR` (100) × its target; `cmd_test` takes a `seed`. | `nodes.intake`, `Pipeline.stage` |
+| `design.py` | The design record: `cmd_init`, `atoms`, `hits`, `query`, `open` (also `MEV:` records), `annotate`, `match`, `research` (the pipeline's research step: opens and annotates references, records the best partitions and chooses one), `propose` (ranked candidate partitions with SASA), `evidence` (per bead: size, precedents, surroundings when they disagree, the type the typing order gives, matching table rows), `candidate` (refuses rule-breaking partitions unless an `exception` names a reference), `choose`, `hydrogens`, `vsite`, `bead`, `note`, `show`, `check`. Each change is saved to `decisions/design.json` and appended to `decisions/design_log.jsonl` with the file's hash. `namespace(cmd, moldir, **kw)` builds a command's arguments from the parser's defaults | `tools/design_tools.py` |
+| `partition.py` | Mapping help: rule checks of a partition (`issues`); bead-by-bead projection of reference models onto the target (`projections`); the bead pool (projected beads, their other exact placements, connected 2–5-atom sets with an indexed precedent, 2–4-atom sets without one: `bead_pool`, `bead_maker`); exact cover with weights by backtracking, closing a branch with a filler bead when the open atoms form one allowed bead (`cover_search`); ranked candidates (`assemble`: exact precedents, SASA band, fewer references, closest analogue; the greedy `_greedy` as fallback); Table 1 building blocks inside a set of atoms | `design.py` (`propose`, `research`, `candidate`) |
 | `refbeads.py` | Fragment signatures, and the parsers that turn mapping files, CGSmiles and ITPs into bead views | `design.py` (signatures), `build_index.py` |
-| `derive_bonded.py`, `d5bonded/` | The D5 bonded-term method (OPLS + GBSA-OBC2 conformer ensembles and Hessians in NumPy) | `cgbuild` stage `bonded` |
+| `derive_bonded.py`, `d5bonded/` | The D5 bonded-term method (OPLS + GBSA-OBC2 conformer ensembles and Hessians in NumPy). `d5bonded/terms.py` keeps every vibration at a period of at least `MIN_PERIOD_STEPS` = 10 timesteps of 20 fs: bond caps from the reduced mass of the two beads (T 17,765, S 26,648, R 35,531 kJ/mol/nm² for same-size pairs; 20,000 / 30,000 / 40,000 with 9 steps until 2026-11-21), angle and dihedral limits from the same period; bonds below 700 are raised to 700 | `cgbuild` stage `bonded`; `derive_ensemble` also for the up-front SASA |
 | `multi_seed_check.py` | `check(out, moldirs)`: the model under four seeds | `nodes.finalize` |
 | `sasa_check.py` | `check(out, moldirs)`: SASA of the built model against the atomistic ensemble; `partition_sasa(md, partitions, sizes)`: the same measure for candidate partitions before typing (ensemble cached in `research/`) | `nodes.finalize`; `design.py` (`propose`, `research`) |
 
@@ -235,7 +235,7 @@ Deterministic nodes (each returns a partial state update):
 | `mapping_gate` | Reads `decisions/design.json`: is `chosen_candidate` set? | Empty `feedback` if yes; otherwise feedback with `design show` and a higher `attempts.mapping` |
 | `typing_gate` | `design check` (exit 0 means complete) | Feedback is the check's list of what is missing |
 | `bonded_build` | Stages `bonded` and `build`; reads `test/static_checks.json` | `stage_failed="bonded"` (with `bonded_failure.json`) or `"build"` (with the failed static checks); the event line shows `bonded.json` flags |
-| `test` | Stage `test`; reads `test/execution.json` | Passes only if em, eq1, eq2 and smoke all pass; otherwise `stage_failed="test"` |
+| `test` | Stage `test` with `random_seed`; on a failure again with `random_seed` + 1 and + 2 (`cgbuild.TEST_RETRY_SEEDS`); writes `test/retries.json` | Passes if every stage passes with one of the seeds (a later seed adds a flagged marginal-stability check at finalize); otherwise `stage_failed="test"` |
 | `finalize` | Stage `finalize`; `multi_seed_check.check` into `multi_seed/` if a model exists; `sasa_check.check` into `sasa/` if the ensemble exists | `status` from `validation.json` |
 | `replay` | Replay mode only: re-issues each command of a recorded `design_log.jsonl` (except `init`) through the same design tools, keeping only arguments the tool's schema knows | Counts commands and errors; `check` failures are expected mid-log and not counted |
 | `report` | Gathers events, status, last failure, `report.md`, `multi_seed/results.json`, `sasa/summary.json` and `bonded.json` flags. In LLM mode (with `run_report_agent`) the report model writes the final message from these records only; otherwise the records are the message | Writes `harness/final_message.md` |
@@ -245,7 +245,7 @@ Agent nodes build a task message and call `run_agent`:
 | Node | Task message contains | Limit key |
 | --- | --- | --- |
 | `research` | Molecule, atom table, top `research_task_hits` hits (`research: agent`). With `research: pipeline` (the default) no agent runs: the node calls `design research` and passes its output on as `evidence` | `research_model_calls` |
-| `mapping` | Atom table, projected partitions (`design propose`), research evidence summary | `mapping_model_calls` |
+| `mapping` | The pipeline's choice with its rationale (confirm or override), atom table, ranked partitions with each bead's source and SASA (`design propose`), research evidence | `mapping_model_calls` |
 | `typing` | Atom table, the chosen candidate's beads (JSON), per-bead evidence (`design evidence`), mapping summary, research summary | `typing_model_calls` |
 | `repair` | Failed stage and its details, `design show`, per-bead evidence | `repair_model_calls` |
 
@@ -268,7 +268,7 @@ START → preflight → intake → research → mapping → mapping_gate → typ
 | `mapping_gate` | No feedback → `typing`. Feedback and `attempts.mapping ≤ gate_retries` → `mapping`. Otherwise → `report` |
 | `typing_gate` | No feedback → `bonded_build`. Feedback and retries left (LLM mode) → `typing`. Otherwise → `report` |
 | `bonded_build` | Stage 4 failed → `report` (not something an agent may fix by choosing values). Static check failed → `repair` if repairs are left, else `finalize` (which classifies the model as `blocked`). Otherwise → `test` |
-| `test` | Failed with repairs left → `repair`, else `finalize` |
+| `test` | Failed with all three seeds and repairs left → `repair`, else `finalize` |
 | `repair` | Always → `typing_gate`, so the changed design is checked before stage 4 runs again |
 
 In replay mode the agent nodes (and `repair`) are replaced by one `replay` node, and gates go to `report` instead of back to an agent. Everything else is identical, so a replay tests the whole deterministic path. It does not test what only a live model does: parallel tool calls, notes, retries.

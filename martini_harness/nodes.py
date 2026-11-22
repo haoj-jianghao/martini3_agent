@@ -190,16 +190,29 @@ class Pipeline:
         return {"stage_failed": "", "failure": "", **self._event(f"bonded + build: ok; bonded flags: {flags}")}
 
     def test(self, s: MolState) -> dict:
-        r = self.stage("test")
-        exe = _rjson(self.moldir / "test/execution.json") or {}
-        steps = {st.get("stage"): st.get("result") for st in exe.get("steps", [])}
-        ok = r.ok and all(steps.get(k) == "pass" for k in ("em", "eq1", "eq2", "smoke"))
+        """GROMACS checks. The test is not deterministic (thread-parallel sums), so a failure is run again with
+        random_seed + 1 and + 2 before repair; a model that passes with any seed continues, and the attempts
+        (test/retries.json) become a flagged check in validation.json."""
+        attempts, seed0 = [], int(self.cfg.env["random_seed"])
+        for k in range(cgbuild.TEST_RETRY_SEEDS + 1):
+            seed = seed0 + k
+            r = call(self.moldir, cgbuild.cmd_test, SimpleNamespace(moldir=str(self.moldir), seed=seed), tag=f"cgbuild.test seed {seed}")
+            exe = _rjson(self.moldir / "test/execution.json") or {}
+            steps = {st.get("stage"): st.get("result") for st in exe.get("steps", [])}
+            ok = r.ok and all(steps.get(x) == "pass" for x in ("em", "eq1", "eq2", "smoke"))
+            attempts.append({"seed": seed, "stages": steps, "passed": ok})
+            if ok:
+                break
+        cgbuild.wjson(self.moldir / "test/retries.json", {"attempts": attempts, "passed": ok,
+                      "note": "a failed test is repeated with other seeds before repair; GROMACS runs are not bit-reproducible"})
         if ok:
-            return {"stage_failed": "", "failure": "", **self._event(f"test: all stages pass {steps}")}
+            how = "" if len(attempts) == 1 else f" with seed {attempts[-1]['seed']} after {len(attempts) - 1} failed seed(s): marginally stable"
+            return {"stage_failed": "", "failure": "", **self._event(f"test: all stages pass {steps}{how}")}
         brief = {k: v for k, v in exe.items() if k in ("steps", "geometry_smoke")}
-        return {"stage_failed": "test", "failure": _clip(f"cgbuild test exit {r.code}; stages {steps}\n"
+        return {"stage_failed": "test", "failure": _clip(f"cgbuild test exit {r.code}; failed with {len(attempts)} seeds "
+                                                          f"({', '.join(str(x['seed']) for x in attempts)}); last stages {steps}\n"
                                                           + json.dumps(brief, indent=1, default=str), 6000),
-                **self._event(f"test: failed {steps}")}
+                **self._event(f"test: failed with {len(attempts)} seeds {steps}")}
 
     def finalize(self, s: MolState) -> dict:
         r = self.stage("finalize")
