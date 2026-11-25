@@ -3,7 +3,8 @@ from reference models onto the target. No bead types are chosen here (partition 
 
 - `issues(mol, beads)`: what is wrong with a partition before any type exists: a bead of one heavy atom, a bead
   too large for an R bead, or an indivisible chemical group (carbonyl, carboxyl, ester, amide, nitro, nitrile,
-  sulfonyl, sulfoxide, phosphate) divided between beads (Souza 2021 SI section C1). Same size thresholds as
+  sulfonyl, sulfoxide, phosphate) divided between beads (Souza 2021 SI section C1). Amides that share an atom
+  (imide, urea) keep only their carbonyls whole (`_matches`). Same size thresholds as
   cgbuild.bead_size_issue, which checks the typed beads at `build`.
 - `projections(mol, records)`: for the reference models with atom memberships most similar to the target, each
   reference bead's atoms (element, aromaticity, ring or chain, bonds) are matched in the target, and one
@@ -57,10 +58,22 @@ def size_of(n):
     return 'T' if n <= 2.5 else 'S' if n <= 3.5 else 'R'
 
 
+def _matches(hv):
+    """(name, atom ids) of every indivisible group in the molecule. An amide match that shares an atom with another
+    amide match (an imide C(=O)-N-C(=O), a urea N-C(=O)-N) is left out: together the matches would force one bead of
+    5+ atoms, so only their carbonyls stay indivisible ('carbonyl' below). Published Martini 3 models of imides keep
+    each C=O whole and do not keep each C(=O)-N (SM3:CAFF; the thymine and uracil models of
+    martini_v3.0.0_nucleobases_v1.itp, whose two TP1a carbonyl beads have the N-H donor site between them). A
+    lone amide stays indivisible. User decision 2026-11-24."""
+    out = [(name, frozenset(hv.ids[i] for i in t)) for name, sm in INDIVISIBLE
+           for t in hv.mol.GetSubstructMatches(Chem.MolFromSmarts(sm))]
+    amides = [g for name, g in out if name == 'amide']
+    return [(name, g) for name, g in out if not (name == 'amide' and any(g & h for h in amides if h != g))]
+
+
 def groups(mol):
-    """Atom-id sets of the indivisible groups present in the molecule."""
-    hv = Heavy(mol)
-    return [set(hv.ids[i] for i in t) for _, sm in INDIVISIBLE for t in hv.mol.GetSubstructMatches(Chem.MolFromSmarts(sm))]
+    """Atom-id sets of the indivisible groups present in the molecule (see `_matches`)."""
+    return [set(g) for _, g in _matches(Heavy(mol))]
 
 
 def issues(mol, beads):
@@ -78,14 +91,13 @@ def issues(mol, beads):
         if n > (5.5 if branched else 4.5):
             out.append(f'bead {k + 1} ({_ids(b)}) holds {n:g} heavy atoms: more than an R bead represents (4, or 5 when fully branched)')
     divided = []          # larger groups come first in INDIVISIBLE; a carbonyl inside a divided ester is not repeated
-    for name, smarts in INDIVISIBLE:
-        for t in hv.mol.GetSubstructMatches(Chem.MolFromSmarts(smarts)):
-            ids = sorted(hv.ids[i] for i in t)
-            whole = any(all(b.get(i, 0.0) > 0.999 for i in ids) for b in beads)
-            if not whole and not any(set(ids) <= d for d in divided):
-                divided.append(set(ids))
-                out.append(f'the {name} group (atoms {",".join(map(str, ids))}) is divided between beads '
-                           f'(Souza SI C1: keep a chemical group in one bead)')
+    for name, g in _matches(hv):
+        ids = sorted(g)
+        whole = any(all(b.get(i, 0.0) > 0.999 for i in ids) for b in beads)
+        if not whole and not any(set(ids) <= d for d in divided):
+            divided.append(set(ids))
+            out.append(f'the {name} group (atoms {",".join(map(str, ids))}) is divided between beads '
+                       f'(Souza SI C1: keep a chemical group in one bead)')
     return out
 
 

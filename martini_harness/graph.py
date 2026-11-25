@@ -3,6 +3,8 @@
     START -> preflight -> intake -> research -> mapping -> mapping_gate -> typing -> typing_gate
           -> bonded_build -> test -> finalize -> report -> END
 
+    research      command fails -> report (blocked). No complete partition within the rules: mapping records its own
+                  (profile mapping_open); otherwise mapping chooses among the supplied P1-P3
     mapping_gate  no choice     -> mapping again (up to gate_retries), then report (blocked)
     typing_gate   incomplete    -> typing again (up to gate_retries), then report (blocked)
     bonded_build  stage 4 fails -> report (blocked: not repairable by the agent)
@@ -44,7 +46,7 @@ def build_graph(p: Pipeline):
         for n in ("research", "mapping", "typing", "repair"):
             g.add_node(n, getattr(p, n))
         g.add_conditional_edges("intake", lambda s: "report" if blocked(s) else "research", ["research", "report"])
-        g.add_edge("research", "mapping")
+        g.add_conditional_edges("research", lambda s: "report" if blocked(s) else "mapping", ["mapping", "report"])
         g.add_edge("mapping", "mapping_gate")
 
         def after_mapping(s):

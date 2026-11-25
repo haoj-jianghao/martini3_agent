@@ -13,7 +13,10 @@ and checks that the record says only what the evidence supports:
 - `candidate` refuses a partition with a lone-atom bead, an oversized bead or a divided chemical group, unless
   `exception` cites a reference that does the same;
 - `research` opens and annotates, without an agent, the references the later steps need (sources of the
-  projected partitions, rung-1 sources of their beads, the closest other hits) and prints them;
+  projected partitions, rung-1 sources of their beads, the closest other hits) and prints them; it records the
+  three best complete partitions within the rules as P1-P3 and chooses P1 (`shortlist` records them without
+  opening references). Once they are recorded, `candidate` is refused and `choose` accepts only P1-P3; when the
+  pipeline supplies none, the mapping agent records its own with `candidate`;
 - `evidence` gives, per bead of the chosen candidate, its rung-1 precedents and the method records (Souza SI
   Table 24/25 rows, Tables 17-19) that apply to it: the harness puts this into the typing task;
 - `bead --rung 1 --from REF:BEAD` copies the type from that source bead after verifying that it holds the
@@ -34,6 +37,7 @@ refused decision raises DesignError. `python -m martini_harness.core.design ...`
   design.py match     <moldir> --atoms 1,2,3[:w]
   design.py evidence  <moldir> [--atoms 1,2,3[:w]]
   design.py research  <moldir> [--top N] [--precedents N] [--hits N]   (the pipeline's research step)
+  design.py shortlist <moldir> [--top N]   (records P1-P3 and chooses P1, after a research agent)
   design.py propose   <moldir> [--top N]
   design.py candidate <moldir> --id ID --beads "1,2,3|4,5:0.5,6" --summary S --pros "a;b" --cons "c;d" [--exception TEXT]
   design.py choose    <moldir> --candidate ID --rationale TEXT
@@ -506,6 +510,17 @@ def similarity_to(mol):
     return sim
 
 
+N_SUPPLIED = 3   # partitions the research pipeline supplies to the mapping step (the agent chooses one of them)
+
+
+def supplied(ranked):
+    """The partitions the pipeline supplies, numbered P1.. in this order: the best-ranked complete partitions
+    within the mapping rules. Returns (partitions, True), or (the top-ranked ones, False) when none qualifies, so
+    that propose and research can still show and open what was found."""
+    ok = [c for c in ranked if c['complete'] and not c['issues']][:N_SUPPLIED]
+    return (ok, True) if ok else (ranked[:N_SUPPLIED], False)
+
+
 def sasa_text(c):
     s = c.get('sasa')
     if not s:
@@ -527,8 +542,12 @@ def cmd_propose(a):
     print(f'Partitions projected from reference models (atoms are this molecule\'s ids; "same" = the bead holds the same '
           f'fragment as its source bead, "context" = same atoms, other bonds out of the bead). Ranked: complete and within '
           f'the mapping rules, then fewest beads without an exact precedent, then the SASA band (mapped vs atomistic '
-          f'surface on the stage-4 ensemble; pass within 5%, review to 10%, flag above), then the closest analogue:')
-    for k, c in enumerate(cands[:3]):
+          f'surface on the stage-4 ensemble; pass within 5%, review to 10%, flag above), then the closest analogue. '
+          f'Shown: the {N_SUPPLIED} best complete partitions within the rules, the ones the research step records:')
+    shown, ok = supplied(cands)
+    if not ok:
+        print('NO complete partition within the mapping rules was found; the best incomplete ones:')
+    for k, c in enumerate(shown):
         state = 'complete' if c['complete'] else f"incomplete, uncovered {P._ids(c['uncovered'])}"
         print(f"\nP{k + 1} ({state}; {sasa_text(c)}; started from {c['seed']}, similarity {c['seed_similarity']:.2f})"
               f"{'  ISSUES: ' + '; '.join(c['issues']) if c['issues'] else ''}")
@@ -550,7 +569,8 @@ def cmd_propose(a):
     for p in sorted(projs, key=lambda p: (-p['covered'], -p['similarity']))[:6]:
         print(f"  {p['reference_id']:<24} {p['name'][:28]:<28} similarity {p['similarity']:.2f}  "
               f"coverage {p['covered']:g}  beads {', '.join(b['source'].rsplit(':', 1)[1] for b in p['beads'])}")
-    print('\nRecord a partition with design_candidate (beads=... as printed); it is checked against the mapping rules.')
+    print(f'\nThe research step records these as P1-P{len(shown)} (when complete and within the rules); the mapping step '
+          f'chooses one of them with design_choose.')
 
 
 def cmd_research(a):
@@ -569,7 +589,7 @@ def cmd_research(a):
         if rid in ex and why not in roles.setdefault(rid, []):
             roles[rid].append(why)
     _, ranked = ranked_candidates(md, mol, a.top)
-    cands = ranked[:3]
+    cands, _ = supplied(ranked)
     for k, c in enumerate(cands):
         for b in c['beads']:
             atoms = P._ids(b['members'])
@@ -613,30 +633,50 @@ def cmd_research(a):
                 mem = ','.join(f'{i}' if w == 1 else f'{i}:{w:g}' for i, w in (bd['members'] or {}).items())
                 print(f"  {bd['name']:<8} {bd['type'] or '?':<6} {bd['signature'] or '(no signature)':<22} {mem}")
         print('  why: ' + '; '.join(why))
-    # record the best complete, rule-abiding candidates (at most two, so the agent can add one) and choose the first
-    ok = [c for c in cands if c['complete'] and not c['issues']][:2]
-    if ok and not des['chosen_candidate']:
-        for k, c in enumerate(ok):
-            srcs = sorted({b['source'] for b in c['beads'] if b['source']})
-            exact = sum(b['same_fragment'] for b in c['beads'])
-            rec = {'id': f'P{cands.index(c) + 1}', 'proposed_by': 'pipeline',
-                   'beads': [{'name': f'B{j + 1}', 'members': {str(i): w for i, w in b['members'].items()},
-                              'source': b['source']}
-                             for j, b in enumerate(c['beads'])],
-                   'summary': f"projected partition {P.spec([b['members'] for b in c['beads']])} (started from {c['seed']})",
-                   'pros': [f"{exact} of {len(c['beads'])} beads hold exactly the fragment of an indexed bead", sasa_text(c)],
-                   'cons': ([f"{len(c['beads']) - exact} bead(s) without an exact precedent"] if exact < len(c['beads']) else []),
-                   'sources': srcs, 'sasa': c.get('sasa')}
-            des['mapping_candidates'] = [x for x in des['mapping_candidates'] if x['id'] != rec['id']] + [rec]
-        top = ok[0]
-        des['chosen_candidate'] = f'P{cands.index(top) + 1}'
-        des['pipeline_choice'] = des['chosen_candidate']
-        des['selection_rationale'] = (f"chosen by the pipeline: the best-ranked projected partition (complete, within the mapping "
-                                      f"rules, {sum(b['same_fragment'] for b in top['beads'])} of {len(top['beads'])} beads with "
-                                      f"an exact precedent, {sasa_text(top)}); the mapping agent confirms or overrides it")
-        print(f"\nRecorded candidates {', '.join('P' + str(cands.index(c) + 1) for c in ok)} and chose "
-              f"{des['chosen_candidate']} ({sasa_text(top)}); the mapping step confirms or overrides this choice.")
+    print('\n' + record_supplied(des, ranked))
     save(md, des, 'research', vars(a))
+
+
+def record_supplied(des, ranked):
+    """Record the supplied partitions as candidates P1.. (proposed_by 'pipeline') and choose P1, unless a choice
+    exists. The mapping step chooses among exactly these: `candidate` is refused once they are recorded. Returns
+    a line for the output."""
+    if des['chosen_candidate']:
+        return f"A candidate is already chosen ({des['chosen_candidate']}); nothing recorded."
+    ok, complete = supplied(ranked)
+    if not complete:
+        return ('NO complete partition within the mapping rules was found: nothing recorded. The mapping agent '
+                'records its own partitions (design_candidate).')
+    for k, c in enumerate(ok):
+        srcs = sorted({b['source'] for b in c['beads'] if b['source']})
+        exact = sum(b['same_fragment'] for b in c['beads'])
+        rec = {'id': f'P{k + 1}', 'proposed_by': 'pipeline',
+               'beads': [{'name': f'B{j + 1}', 'members': {str(i): w for i, w in b['members'].items()},
+                          'source': b['source']}
+                         for j, b in enumerate(c['beads'])],
+               'summary': f"projected partition {P.spec([b['members'] for b in c['beads']])} (started from {c['seed']})",
+               'pros': [f"{exact} of {len(c['beads'])} beads hold exactly the fragment of an indexed bead", sasa_text(c)],
+               'cons': ([f"{len(c['beads']) - exact} bead(s) without an exact precedent"] if exact < len(c['beads']) else []),
+               'sources': srcs, 'sasa': c.get('sasa')}
+        des['mapping_candidates'] = [x for x in des['mapping_candidates'] if x['id'] != rec['id']] + [rec]
+    top = ok[0]
+    des['chosen_candidate'] = des['pipeline_choice'] = 'P1'
+    des['selection_rationale'] = (f"chosen by the pipeline: the best-ranked projected partition (complete, within the mapping "
+                                  f"rules, {sum(b['same_fragment'] for b in top['beads'])} of {len(top['beads'])} beads with "
+                                  f"an exact precedent, {sasa_text(top)}); the mapping agent confirms it or chooses another "
+                                  f"supplied partition")
+    return (f"Recorded candidates P1-P{len(ok)} and chose P1 ({sasa_text(top)}); the mapping step confirms it or "
+            f"chooses another of these.")
+
+
+def cmd_shortlist(a):
+    """Record the supplied partitions and choose P1 without opening references (after a research agent, which
+    cannot record candidates). Logged as one command, so a replay re-runs it."""
+    md = Path(a.moldir)
+    des = load(md)
+    _, ranked = ranked_candidates(md, target(md), a.top)
+    print(record_supplied(des, ranked))
+    save(md, des, 'shortlist', vars(a))
 
 
 def surroundings(mol, members):
@@ -781,6 +821,10 @@ def cmd_candidate(a):
     md = Path(a.moldir)
     des = load(md)
     mol = target(md)
+    if des.get('pipeline_choice'):
+        die(f"the research pipeline supplied the candidates "
+            f"({', '.join(c['id'] for c in des['mapping_candidates'] if c.get('proposed_by') == 'pipeline')}); "
+            f"choose one of them with design_choose. Recording another partition is not allowed.")
     beads = partition(a.beads, mol)
     cands = [c for c in des['mapping_candidates'] if c['id'] != a.id]
     if len(cands) >= 3:
@@ -792,7 +836,8 @@ def cmd_candidate(a):
                 '\nChange the partition, or pass exception=... naming a reference (REF_ID) whose published mapping does the same.')
         if not any(rid in a.exception for rid in refs()):
             die('exception must name the reference (REF_ID, for example SM3:THIO:opt) whose mapping does the same')
-    rec = {'id': a.id, 'beads': [{'name': f'B{k + 1}', 'members': {str(i): w for i, w in b.items()}} for k, b in enumerate(beads)],
+    rec = {'id': a.id, 'proposed_by': 'agent',
+           'beads': [{'name': f'B{k + 1}', 'members': {str(i): w for i, w in b.items()}} for k, b in enumerate(beads)],
            'summary': a.summary, 'pros': [x.strip() for x in a.pros.split(';') if x.strip()],
            'cons': [x.strip() for x in a.cons.split(';') if x.strip()]}
     if found:
@@ -821,6 +866,8 @@ def cmd_choose(a):
     if a.candidate not in [c['id'] for c in des['mapping_candidates']]:
         die(f'no candidate {a.candidate}')
     pick = des.get('pipeline_choice')
+    if pick and next(c for c in des['mapping_candidates'] if c['id'] == a.candidate).get('proposed_by') != 'pipeline':
+        die(f'{a.candidate} was not supplied by the research pipeline; choose one of the pipeline\'s candidates')
     if pick and a.candidate != pick and len(a.rationale.strip()) < 40:
         die(f'{a.candidate} overrides the pipeline\'s choice {pick}: the rationale must say why {pick} is not used '
             f'(at least 40 characters)')
@@ -1028,6 +1075,7 @@ def build_parser():
     q = p('research', cmd_research); q.add_argument('--top', type=int, default=25); q.add_argument('--precedents', type=int, default=2)
     q.add_argument('--hits', type=int, default=5)
     q = p('propose', cmd_propose); q.add_argument('--top', type=int, default=25)
+    q = p('shortlist', cmd_shortlist); q.add_argument('--top', type=int, default=25)
     q = p('candidate', cmd_candidate); q.add_argument('--id', required=True); q.add_argument('--beads', required=True)
     q.add_argument('--summary', required=True); q.add_argument('--pros', required=True); q.add_argument('--cons', required=True)
     q.add_argument('--exception')

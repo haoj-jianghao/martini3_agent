@@ -375,3 +375,33 @@ Open:
 - **Step 2:** the provenance file.
 - **Finalize-only failures:** a validation check that fails only at finalize does not reach repair.
 - **Rationale vs recorded type:** no check that a recorded type agrees with its rationale (one slip seen).
+
+## Mapping: the agent chooses, the pipeline supplies (2026-11-24, user decisions)
+
+- **Choose only.** The research step supplies the three best-ranked complete partitions within the mapping rules
+  (P1-P3, `design.supplied` / `record_supplied`) and chooses P1; `design propose` shows the same three. The
+  mapping agent confirms P1 or chooses P2/P3 (reason of at least 40 characters). It has no `design_candidate`, and
+  `design.py` refuses `candidate`, and `choose` of a candidate the pipeline did not supply, once P1-P3 exist.
+  Repair has no `design_candidate` either. With `research: agent`, `design shortlist` records P1-P3 after the agent.
+- **No supplied partition.** When the search finds no complete partition within the rules, the mapping node runs
+  with the profile `mapping_open` (`prompts/tasks/mapping_open.md`; tools of mapping plus `candidate`): it records
+  up to three partitions of its own, checked by the same rules, and chooses one. Research blocks only when its
+  command fails. Repair stays for failed builds and tests.
+- **Imides and ureas.** Amides that share an atom keep only their carbonyls whole (`partition._matches`), as in the
+  published imide models (SM3:CAFF; thymine and uracil in `martini_v3.0.0_nucleobases_v1.itp`); a lone amide stays
+  indivisible. An N-H imide therefore keeps one C(=O)NH bead and puts the other C=O alone or with its neighbour.
+  Glutarimide, barbiturates, hydantoins and thalidomide get partitions (without exact precedents; accepted).
+- **5-atom branched beads.** Not added to the bead pool without an indexed precedent (user decision). Published 5-atom
+  branched beads are whole small molecules (CCl4, TMA, ions; neopentane in Souza SI C1) or charged and sulfonyl
+  centres (phosphonium, sulfonamides); a tert-butyl substituent is a 4-atom S bead (FF300 TBA, Bible rows 73, 327).
+  Neopentane, tert-butanol and dimethyl sulfone therefore go to `mapping_open`.
+- **Multi-fragment SMILES** (salts, counter-ions, mixtures) are refused at intake (`cgbuild.cmd_input`).
+- **Agent-written candidates** carry `proposed_by: agent` and no bead sources or SASA (an earlier version that added
+  them was reverted).
+- **Families of partitions:** explored, not integrated (`docs/plan_mapping_families.md`).
+
+Open:
+- Families of candidates and the hide-and-rank benchmark (`docs/plan_mapping_families.md`).
+- `sasa_text` prints "incomplete partition" for complete candidates ranked below the 6 whose SASA is computed.
+- No live LLM run of the `mapping_open` profile yet (tested with a stubbed agent on neopentane).
+

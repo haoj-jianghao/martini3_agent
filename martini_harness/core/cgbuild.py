@@ -227,6 +227,9 @@ def cmd_input(a):
         if b.GetBondType() == Chem.BondType.DOUBLE and b.GetStereo() != Chem.BondStereo.STEREONONE:
             dbonds.append({'atoms_1based': [b.GetBeginAtomIdx() + 1, b.GetEndAtomIdx() + 1], 'stereo': str(b.GetStereo())})
     frags = Chem.GetMolFrags(mol0)
+    if len(frags) > 1:   # salts, counter-ions, mixtures: out of scope (user decision 2026-11-24)
+        raise StageError(f'the SMILES has {len(frags)} disconnected fragments ({a.smiles}); only one connected '
+                         f'molecule per run is in scope (no salts, counter-ions or mixtures)')
     aa_top = supplied_topology(md, a) if a.aa_topology else None
     molH = Chem.AddHs(mol0)
     params = AllChem.ETKDGv3()

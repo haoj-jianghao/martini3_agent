@@ -18,6 +18,7 @@ PROMPTS = Path(__file__).resolve().parent / "prompts"
 NODE_STAGES = {
     "research": ["2_mapping"],
     "mapping": ["2_mapping", "4_bonded"],
+    "mapping_open": ["2_mapping", "4_bonded"],     # the mapping node when the pipeline supplied no partition
     "typing": ["3_typing"],
     "repair": ["2_mapping", "3_typing", "4_bonded", "5_check"],
     "report": ["6_deliver"],

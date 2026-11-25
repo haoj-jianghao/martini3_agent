@@ -59,10 +59,14 @@ def _clip(s: str, n: int) -> str:
 AGENT_TOOLS = {
     # node: (design.py commands, reference tools?, run-file tool?)
     "research": (["atoms", "hits", "query", "open", "annotate", "match", "note", "show"], True, False),
-    "mapping": (["atoms", "hits", "open", "annotate", "match", "propose", "candidate", "choose", "hydrogens", "vsite", "note", "show"],
+    # mapping and repair choose among the pipeline's partitions (P1-P3) and record no partition of their own;
+    # mapping_open is the mapping node's profile when the pipeline supplied none: it records its own candidates
+    "mapping": (["atoms", "hits", "open", "annotate", "match", "propose", "choose", "hydrogens", "vsite", "note", "show"],
                 True, False),
+    "mapping_open": (["atoms", "hits", "open", "annotate", "match", "propose", "candidate", "choose", "hydrogens", "vsite",
+                      "note", "show"], True, False),
     "typing": (["atoms", "open", "annotate", "match", "evidence", "bead", "vsite", "note", "show", "check"], True, False),
-    "repair": (["atoms", "open", "annotate", "match", "evidence", "propose", "candidate", "choose", "bead", "vsite", "hydrogens", "note", "show",
+    "repair": (["atoms", "open", "annotate", "match", "evidence", "propose", "choose", "bead", "vsite", "hydrogens", "note", "show",
                 "check"], True, True),
 }
 
@@ -100,14 +104,17 @@ class Pipeline:
             tools.append(make_run_file_tool(self.ctx))
         return tools
 
-    def run_agent(self, node: str, task: str, limit_key: str) -> str:
+    def run_agent(self, node: str, task: str, limit_key: str, profile: str | None = None) -> str:
+        """One agent run of a graph node. `profile` (default: the node) picks the tools and the system prompt; the
+        model, limits and trace stay those of the node."""
         from .models import node_models
+        profile = profile or node
         primary, fallbacks = node_models(self.cfg, node)
         middleware = [ModelCallLimitMiddleware(run_limit=self.cfg.limit(limit_key), exit_behavior="end"),
                       ModelRetryMiddleware(max_retries=int(self.cfg.raw.get("model_retries", 4)), initial_delay=5.0, max_delay=90.0)]
         if fallbacks:
             middleware.append(ModelFallbackMiddleware(*fallbacks))
-        agent = create_agent(model=primary, tools=self.tools_for(node), system_prompt=system_prompt(self.cfg.prompts, node),
+        agent = create_agent(model=primary, tools=self.tools_for(profile), system_prompt=system_prompt(self.cfg.prompts, profile),
                              middleware=middleware, name=f"{node}_agent")
         tracer = JsonlTracer(self.trace_path, node)
         try:
@@ -154,7 +161,8 @@ class Pipeline:
         att = dict(s.get("attempts") or {})
         if des.get("chosen_candidate"):
             pick, chosen = des.get("pipeline_choice"), des["chosen_candidate"]
-            how = "" if not pick else (" (pipeline's choice confirmed)" if chosen == pick else f" (overrides the pipeline's {pick})")
+            how = (" (no supplied partition: recorded by the mapping agent)" if not pick else
+                   " (pipeline's choice confirmed)" if chosen == pick else f" (overrides the pipeline's {pick})")
             return {"feedback": "", **self._event(f"mapping gate: candidate {chosen} chosen{how}")}
         att["mapping"] = att.get("mapping", 0) + 1
         fb = ("No candidate was chosen. Record candidates with design_candidate and choose one with design_choose "
@@ -232,31 +240,46 @@ class Pipeline:
 
     def research(self, s: MolState) -> dict:
         if self.research_mode == "pipeline":
-            # deterministic: open and annotate the references later steps need, and pass their evidence on
+            # deterministic: open and annotate the references later steps need, record the supplied partitions
             out = self.design("research")
             if out.startswith("[exit"):
-                return {"evidence": "", **self._event(f"research (pipeline): failed {out[:300]}")}
+                return {"status": "blocked", "failure": f"research (pipeline) failed:\n{out[:3000]}", "evidence": "",
+                        **self._event("research (pipeline): failed (blocked)")}
             n = out.count("\n  why: ")
-            return {"evidence": out, **self._event(f"research (pipeline): {n} references opened and annotated")}
-        # agent: a short first message, the atom table and the top hits only. The agent can list more with design_hits.
-        n = int(self.cfg.raw.get("research_task_hits", 15))
-        task = (f"Molecule {s['mol_id']} ({s['name']}), SMILES {s['smiles']}. `design.py init` has run.\n\n"
-                f"# Atom table\n{self.design('atoms')}\n\n# Top {n} reference hits (design_hits lists more)\n"
-                f"{self.design('hits', limit=n)}{self._fb(s)}")
-        ans = self.run_agent("research", task, "research_model_calls")
-        return {"evidence": ans, **self._event("research: done")}
+            upd = {"evidence": out, **self._event(f"research (pipeline): {n} references opened and annotated")}
+        else:
+            # agent: a short first message, the atom table and the top hits only. The agent can list more with design_hits.
+            n = int(self.cfg.raw.get("research_task_hits", 15))
+            task = (f"Molecule {s['mol_id']} ({s['name']}), SMILES {s['smiles']}. `design.py init` has run.\n\n"
+                    f"# Atom table\n{self.design('atoms')}\n\n# Top {n} reference hits (design_hits lists more)\n"
+                    f"{self.design('hits', limit=n)}{self._fb(s)}")
+            ans = self.run_agent("research", task, "research_model_calls")
+            out = self.design("shortlist")                      # the supplied partitions, as in pipeline mode
+            upd = {"evidence": ans, **self._event(f"research: done; {out.strip()[:200]}")}
+        des = _rjson(self.moldir / "decisions/design.json") or {}
+        if not des.get("pipeline_choice"):     # the mapping agent records its own partitions (profile mapping_open)
+            upd["events"] = upd["events"] + ["research: no complete partition within the rules; the mapping agent records its own"]
+        return upd
 
     def mapping(self, s: MolState) -> dict:
         des = _rjson(self.moldir / "decisions/design.json") or {}
         pick = des.get("pipeline_choice")
-        head = (f"# The pipeline has recorded and chosen {pick}\n{des.get('selection_rationale')}\n"
-                f"Confirm it (finish without changing the choice) or override it (design_choose another recorded "
-                f"candidate, or design_candidate a new one and choose it), with your reason.\n\n" if pick else "")
+        if pick:
+            ids = [c["id"] for c in des.get("mapping_candidates", []) if c.get("proposed_by") == "pipeline"]
+            head = (f"# The pipeline has supplied {', '.join(ids)} and chosen {pick}\n{des.get('selection_rationale')}\n"
+                    f"Confirm it (finish without changing the choice) or choose another of {', '.join(ids)} with "
+                    f"design_choose and your reason. You cannot record a partition of your own.\n\n")
+            shown, profile = "The supplied partitions (prepared by the pipeline)", "mapping"
+        else:
+            head = ("# The pipeline supplied NO partition\nIts search found no complete partition within the mapping rules "
+                    "(the best incomplete ones are below, with the atoms they leave uncovered). Record up to three "
+                    "partitions of your own with design_candidate and choose one with design_choose.\n\n")
+            shown, profile = "The best incomplete partitions the pipeline found", "mapping_open"
         task = (f"Molecule {s['mol_id']} ({s['name']}), SMILES {s['smiles']}.\n\n{head}# Atom table\n{self.design('atoms')}\n\n"
-                f"# Partitions projected from reference models (prepared by the pipeline)\n{self.design('propose')}\n\n"
+                f"# {shown}\n{self.design('propose')}\n\n"
                 f"# Evidence from the research step\n{s.get('evidence', '')}{self._fb(s)}")
-        ans = self.run_agent("mapping", task, "mapping_model_calls")
-        return {"mapping_summary": ans, **self._event("mapping: done")}
+        ans = self.run_agent("mapping", task, "mapping_model_calls", profile=profile)
+        return {"mapping_summary": ans, **self._event(f"mapping ({profile}): done")}
 
     def typing(self, s: MolState) -> dict:
         des = _rjson(self.moldir / "decisions/design.json") or {}

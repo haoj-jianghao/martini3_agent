@@ -137,9 +137,13 @@ SPECS = [
     ("research", ResearchArgs, "The pipeline's research step: open and annotate the references the later steps need (no agent uses it; "
                                "replay re-runs it)."),
     ("evidence", EvidenceArgs, "Per bead: rung-1 precedents and the Souza SI Table 24/25 rows (or Tables 17-19) that apply, with citations."),
-    ("propose", ProposeArgs, "Candidate partitions projected from the most similar reference models, with their sources."),
-    ("candidate", CandidateArgs, "Record one mapping candidate (at most three); refused if it breaks the mapping rules."),
-    ("choose", ChooseArgs, "Choose one recorded candidate."),
+    ("shortlist", ProposeArgs, "The pipeline records its supplied partitions P1-P3 and chooses P1 (no agent uses it; replay "
+                               "re-runs it)."),
+    ("propose", ProposeArgs, "The partitions the pipeline supplies (P1-P3), projected from the most similar reference models, "
+                             "with their sources and SASA."),
+    ("candidate", CandidateArgs, "Record one mapping candidate of your own (at most three), only when the pipeline supplied "
+                                 "no partition; refused if it breaks the mapping rules."),
+    ("choose", ChooseArgs, "Choose one of the recorded candidates (P1-P3, supplied by the pipeline)."),
     ("hydrogens", HydrogensArgs, "Leave the hydrogens of some heavy atoms out of bead centres."),
     ("vsite", VsiteArgs, "Declare a virtual site and its construction."),
     ("bead", BeadArgs, "Record one bead with its type, typing rung, sources and charge."),
