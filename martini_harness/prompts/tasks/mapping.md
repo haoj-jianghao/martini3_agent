@@ -10,6 +10,13 @@ closest analogue. SASA is one criterion among several, not the deciding one. Bet
 equally exact, a ring whose beads share atoms (half-weight ring atoms) is preferred to a ring cut into unshared
 beads; do not override the pipeline's choice for ring style alone.
 
+The supplied partitions are distinct alternatives, not the three highest ranks. Partitions that differ from a
+better-ranked one by at most two bead edits (two beads merged or split, ring atoms paired differently) form one
+family with it, and each supplied partition is the best-ranked of its family ("leads family N"). When the
+partitions form fewer than three families, the remaining slots hold the best-ranked variants ("variant in family
+N"). Compare the families first; choose a variant over its family's leader only for a reason specific to this
+molecule.
+
 The pipeline has recorded P1-P3 and chosen P1. Review them and choose one: confirm P1 by finishing without
 changing the choice, or choose P2 or P3 with `design_choose` where the chemistry of this molecule requires it; that
 override needs a rationale that says why P1 is not used. You choose only among P1-P3: you cannot record a

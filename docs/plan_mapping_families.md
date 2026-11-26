@@ -1,7 +1,9 @@
 # Families of candidate partitions (exploration, 2026-11-24; not integrated)
 
-Status: exploration only. Nothing here is used by the harness yet. The script is
-`docs/exploration/mapping_families_atomdist.py`.
+Status: the bead-graph distance chooses the supplied partitions since 2026-11-26 (section "Integrated"); the rest
+is exploration. The scripts are
+`docs/exploration/mapping_families_atomdist.py` (atom-count distance, below) and
+`docs/exploration/mapping_families_beadgraph.py` (bead-graph distance, section "Bead-graph distance", 2026-11-26).
 
 ## Problem
 
@@ -19,8 +21,8 @@ The goal is for the pipeline to supply **a few meaningful partitions** instead o
 mapping agent then only chooses among them. Grouping candidates into families is the proposed way to pick those
 few.
 
-State of the code (2026-11-24): the research step supplies the three best-ranked complete partitions within the
-rules (P1-P3, `design.supplied`), and the mapping agent chooses one; it cannot record a partition of its own.
+State of the code (2026-11-24; superseded on 2026-11-26, section "Integrated"): the research step supplies the three
+best-ranked complete partitions within the rules (P1-P3, `design.supplied`), and the mapping agent chooses one; it cannot record a partition of its own.
 When the pipeline finds no complete partition (for example neopentane, tert-butanol, dimethyl sulfone), the
 mapping node runs with the `mapping_open` profile and records its own. Families would change which three are
 supplied, not this flow.
@@ -136,16 +138,132 @@ in diphenhydramine, are both at d = 6.
    `sasa_text` prints "SASA not computed (incomplete partition)" for every other candidate, even complete ones.
    A family lead from lower down needs its SASA computed, and the message is wrong.
 
+## Bead-graph distance (exploration, 2026-11-26)
+
+Script: `docs/exploration/mapping_families_beadgraph.py`. It addresses limitation 1: a merge costs 1 whatever the bead
+sizes. Atom numbers below are atom ids (1-based position in `input/atomistic.sdf`; heavy atoms come first).
+
+### Definition
+
+- **Bead graph.** One node per bead; two beads are joined when a covalent bond runs between them or they share an
+  atom (half-shared ring atoms).
+- **Regions.** Each ring system (fused rings are one) and each acyclic chain, with the groups of
+  `partition.INDIVISIBLE` (carboxyl, amide, ...) carved out of chains as regions of their own. Ibuprofen: ring
+  `5,6,7,8,14,15`; chains `1,2,3,4`, `9,10` and the carboxyl `11,12,13`. Without the carving, `9,10` and `11,12,13`
+  share one chain region and the matcher pairs them with each other.
+- **Bead type** = the set of region instances the bead touches. **Bead label** = (size T/S/R, shares atoms).
+- **Correspondence A → B.** Each A bead goes to one B bead or stays unmatched: 1:1 when the types are equal, or as a
+  merge, when several connected A beads together have exactly the B bead's atoms (weights summed).
+- **Distance** = merges (k beads into one count k − 1) + unmatched beads of A and of B + bead edges in only one graph
+  (A's edges taken through the correspondence) + 1:1 pairs whose labels differ. Minimised over correspondences, over
+  Aut(G) (B relabelled through σ) and over both directions (a split is a merge from B to A).
+
+### Results
+
+| Pair | Should be | Distance | What differs |
+|---|---|---|---|
+| ibuprofen 1 vs 2 | same | 1 | merge `7,8` + `9,10` → `7,8,9,10` |
+| lidocaine 1 vs 3 | same | 1 | merge `3,6` + `4,5` → `3,4,5,6` |
+| naproxen 2 vs 3 | same | 1 | merge `8,14` + `9,10` → `8,9,10,14` |
+| naproxen 2 vs 4, 2 vs 5 (ex. 1) | same | 2 | ring re-pairing: one bead edge lost, one gained |
+| diphenhydramine mixed (rank 2) vs 1 / vs 3 | dropped | 4 / 4 | one phenyl restyled: 3 labels, 1 edge |
+| diphenhydramine 1 vs 3 (ex. 3) | different | 8 | both phenyls restyled: 6 labels, 2 edges |
+| naproxen 1 vs 2; ibuprofen 1 vs 3 | different | 10; 10 | unmatched beads and edges |
+
+Same ≤ 2, different ≥ 8: a wider margin than the atom-count distance (4 vs 6 atoms). Naproxen 2 vs 4 is not 0:
+the shared ring bond 6–16 joins two beads of the side-chain ring in rank 2 (`6,7`, `15,16`) and two beads of the
+methoxy ring in rank 4 (`5,6`, `16,17`). On bare naphthalene the two are mirror images; naproxen's substituents
+(C3, C8) break that mirror, so no automorphism relates them.
+
+Families (leader clustering in rank order):
+
+| Cutoff | naproxen (60) | ibuprofen (14) | lidocaine (15) | diphenhydramine (25) |
+|---|---|---|---|---|
+| 1 | 24 | 7 | 9 | 9 |
+| 2 | 15 | 5 | 7 | 9 |
+| 3 | 11 | 5 | 5 | 6 |
+| 4 | 6 | 3 | 4 | 5 |
+| 5 | 4 | 2 | 3 | 4 |
+
+At cutoff 2: naproxen F2 holds ranks 2–5 and rank 1 leads F1; ibuprofen F1 holds ranks 1 and 2, and rank 3 leads F2;
+lidocaine F1 is {1, 3}; diphenhydramine F1 (both rings shared), F2 (mixed) and F3 (both rings as pairs) are separate.
+The workable window is 2–3.
+
+### What was tried on the way
+
+- **Tanimoto over pair bits, maximised over Aut(G).** No pair improved: naproxen has |Aut| = 1, and candidates are
+  already unique up to symmetry (`cover_key`), so no two are symmetry images of each other.
+- **Bead graph with strict types, one-to-one, edge Tanimoto.** Naproxen 2 vs 4 = 0.80 and 1 vs 2 = 0.21, but ibuprofen
+  1 vs 2 = 0.22: the merged bead `7,8,9,10` touches ring and chain, matches no bead, and loses its edges. Diphenhydramine
+  1 vs 3 = 0.83: a phenyl as three shared beads and as three pairs are both a triangle of beads, so ring style needs
+  the labels.
+- **Merges without the atom check** let unrelated beads merge (naproxen `1,2` + `3,17` → `1,2,3`; atom 17 is not in
+  it), which shortened different pairs from 10 to 6.
+- **Forcing identical beads and atom merges** (no search for them) overestimated 173 of naproxen's 1770 pairs, 60 of
+  them at distance ≤ 5 (rank 23 vs 25: 6 instead of 2, a forced merge where a ring re-pairing was cheaper). It is kept
+  only as a starting bound.
+
+### Search and cost
+
+Exact branch and bound. What makes it fast enough:
+
+1. Symmetry outside the search: B is relabelled once per σ, and a 1:1 match must stay in the same region instance
+   (this phenyl, not the other one).
+2. σ that give the same problem are run once: σ and σ' are equivalent when σ'(B) = t(σ(B)) for a t that leaves A
+   unchanged.
+3. One bound shared across σ, and a lower bound that counts a 1:1 label mismatch at once (it costs ≥ 1 either way).
+4. For clustering, cutoff + 1 is the starting bound: only "d ≤ cutoff" is decided exactly.
+
+Clustering at one cutoff: naproxen 0.6–1.1 s, diphenhydramine 0.4–0.6 s, ibuprofen and lidocaine < 0.05 s. All
+pairs without a cap (`--all`): naproxen 19 s, diphenhydramine 44 s. Verified against an exhaustive search: 0
+differences over all pairs of ibuprofen, lidocaine and naproxen; diphenhydramine has no exhaustive reference (too slow).
+
+### Open points
+
+- **The mixed ring style still sits between the pure styles** (4 from each, which are 8 apart): it still needs the
+  consistency filter (next step 1).
+- **One-to-one ring matches are not checked against atoms**, by design: ring re-pairings (naproxen 2 vs 4) have no atom
+  correspondence. Only merges are.
+- **Cost grows with symmetric scaffolds.** Two equivalent phenyls are handled; a molecule with more equivalent rings
+  has not been tried.
+- **The cutoff is set from four molecules.** The hide-and-rank benchmark (next step 4) should set it.
+
+## Integrated (2026-11-26)
+
+`martini_harness/core/families.py` holds the bead-graph distance (capped search only) and `supply(mol, cands, n,
+cutoff)`. `design.supplied(ranked, mol, md)` now returns, among the complete partitions within the rules:
+
+- the leaders of the first three families, cutoff 2 bead edits (user decision), found by walking the candidates in
+  rank order and stopping at the third leader, so the cost does not grow with the number of candidates;
+- when there are fewer than three families, the best-ranked variants in the remaining slots, whatever their family
+  (user decisions: always three when there are three candidates; by rank, not family 1's variants first), each
+  marked "variant in family N".
+
+Each supplied partition carries `family` and `family_leader` (shown by `propose`, stored on the candidate in
+`design.json`; the rationale says how many distinct families were supplied). A supplied partition ranked below the
+6 for which `assemble` computes SASA gets its SASA computed in `supplied` (limitation 5 above). The mapping prompts
+(`tasks/mapping.md`, `stages/2_mapping.md` item 6) explain families and variants.
+
+On the 2026-11-22 drug run (11 molecules): `propose` takes 0.3-2.4 s per molecule; the family search at most 0.22 s
+(carbamazepine). The supplied set changes for 6 of 11: ibuprofen P2 rank 3, P3 rank 4; lidocaine P3 rank 4; naproxen
+P3 rank 6; aspirin P2 rank 3, P3 rank 5; dexamethasone P3 rank 4; caffeine P2 rank 11 (P3 a variant of family 1);
+paracetamol: 2 families, P3 a variant of family 1.
+
+Known effect of leader clustering: it is not transitive. Naproxen rank 4 joins family 2 (distance 2 from rank 2), but
+rank 6 (rank 4's ring pairing plus the merge `7,8` + `9,10`) is distance 3 from rank 2 and leads family 3. P3 is then
+a variant of a variant of P2, not a different mapping.
+
 ## Proposed next steps (not started)
 
 1. **Consistency filter.** Before clustering, drop candidates that map symmetry-equivalent regions differently.
 2. **Distance in beads instead of atoms.** Count the beads in the symmetric difference, so that a merge costs the
-   same whatever the bead sizes.
+   same whatever the bead sizes. Explored as the bead-graph distance above (2026-11-26).
 3. **Variant filter.** Show only variants with no more non-exact beads than their leader.
 4. **Hide-and-rank benchmark to set the cutoff and the ranking.** Hide molecules that have a published Martini 3
    model from the index, run the pipeline, and record where the published partition and its family rank.
 5. **Then integrate.** Supply one lead per family (P1-P3 = the leads of the top three families) and list each
-   family's named variants. The agent chooses a family and, optionally, a variant, still choosing only.
+   family's named variants. The agent chooses a family and, optionally, a variant, still choosing only. The first
+   half is done (section "Integrated"); listing each family's variants is not.
 
 Note for the benchmark: since 2026-11-24, amides that share an atom (imide, urea) keep only their carbonyls whole
 (`partition._matches`). This adds candidates for ureas (carbamazepine gains a P3 that splits its urea) and gives

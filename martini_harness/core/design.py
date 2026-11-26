@@ -65,6 +65,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 from . import cgbuild as C  # noqa: E402  (shared paths, index search, core types)
 from . import refbeads as R  # noqa: E402
 from . import partition as P  # noqa: E402
+from . import families as F  # noqa: E402
 
 DESIGN = 'decisions/design.json'
 LOG = 'decisions/design_log.jsonl'
@@ -513,18 +514,45 @@ def similarity_to(mol):
 N_SUPPLIED = 3   # partitions the research pipeline supplies to the mapping step (the agent chooses one of them)
 
 
-def supplied(ranked):
-    """The partitions the pipeline supplies, numbered P1.. in this order: the best-ranked complete partitions
-    within the mapping rules. Returns (partitions, True), or (the top-ranked ones, False) when none qualifies, so
-    that propose and research can still show and open what was found."""
-    ok = [c for c in ranked if c['complete'] and not c['issues']][:N_SUPPLIED]
-    return (ok, True) if ok else (ranked[:N_SUPPLIED], False)
+def supplied(ranked, mol, md=None):
+    """The partitions the pipeline supplies, numbered P1.. in this order: among the complete partitions within the
+    mapping rules, the best-ranked of each of the first N_SUPPLIED families (core/families.py: partitions within
+    families.CUTOFF bead edits of a better-ranked one are its variants), then, when there are fewer families, the
+    best-ranked variants. Each gets 'family' (1-based) and 'family_leader'; one without SASA (ranked below the n_sasa
+    that `assemble` computes) gets it here when `md` is given. Returns (partitions, True), or (the top-ranked ones, False) when none
+    qualifies, so that propose and research can still show and open what was found."""
+    ok = [c for c in ranked if c['complete'] and not c['issues']]
+    if not ok:
+        return ranked[:N_SUPPLIED], False
+    out = []
+    for k, fam, lead in F.supply(mol, ok, N_SUPPLIED):
+        ok[k]['family'], ok[k]['family_leader'] = fam + 1, lead
+        out.append(ok[k])
+    todo = [c for c in out if c.get('sasa') is None] if md else []
+    if todo:
+        from . import sasa_check
+        try:
+            for c, v in zip(todo, sasa_check.partition_sasa(md, [[b['members'] for b in c['beads']] for c in todo],
+                                                            sizes=[[b['size'] for b in c['beads']] for c in todo])):
+                c['sasa'] = {'difference_pct': v[0], 'band': v[1]}
+        except Exception as e:  # noqa: BLE001  (as in partition.assemble: no GROMACS or no ensemble, say why)
+            for c in todo:
+                c['sasa'] = {'error': f'{type(e).__name__}: {str(e)[:200]}'}
+    return out, True
+
+
+def family_text(c):
+    """How a supplied partition relates to the others (None for one not chosen by family)."""
+    if 'family' not in c:
+        return None
+    return (f"leads family {c['family']}" if c['family_leader'] else
+            f"variant in family {c['family']} (within {F.CUTOFF} bead edits of its leader)")
 
 
 def sasa_text(c):
     s = c.get('sasa')
     if not s:
-        return 'SASA not computed (incomplete partition)'
+        return 'SASA not computed' + ('' if c.get('complete') else ' (incomplete partition)')
     if 'error' in s:
         return f"SASA not available ({s['error']})"
     return f"SASA {s['difference_pct']:+.1f}% ({s['band']})"
@@ -543,13 +571,21 @@ def cmd_propose(a):
           f'fragment as its source bead, "context" = same atoms, other bonds out of the bead). Ranked: complete and within '
           f'the mapping rules, then fewest beads without an exact precedent, then the SASA band (mapped vs atomistic '
           f'surface on the stage-4 ensemble; pass within 5%, review to 10%, flag above), then the closest analogue. '
-          f'Shown: the {N_SUPPLIED} best complete partitions within the rules, the ones the research step records:')
-    shown, ok = supplied(cands)
+          f'Partitions that differ from a better-ranked one by at most {F.CUTOFF} bead edits (a merge or split of two '
+          f'beads, a re-pairing of ring atoms) form one family with it. Shown: the best-ranked complete partition '
+          f'within the rules of each of the first {N_SUPPLIED} families (with fewer families, the best-ranked variants '
+          f'follow), the ones the research step records:')
+    shown, ok = supplied(cands, mol, md)
     if not ok:
         print('NO complete partition within the mapping rules was found; the best incomplete ones:')
+    elif sum(c['family_leader'] for c in shown) < N_SUPPLIED:
+        print(f"The complete partitions within the rules form only {sum(c['family_leader'] for c in shown)} "
+              f"distinct family(ies).")
     for k, c in enumerate(shown):
         state = 'complete' if c['complete'] else f"incomplete, uncovered {P._ids(c['uncovered'])}"
-        print(f"\nP{k + 1} ({state}; {sasa_text(c)}; started from {c['seed']}, similarity {c['seed_similarity']:.2f})"
+        fam = family_text(c)
+        print(f"\nP{k + 1} ({state}{'; ' + fam if fam else ''}; {sasa_text(c)}; started from {c['seed']}, "
+              f"similarity {c['seed_similarity']:.2f})"
               f"{'  ISSUES: ' + '; '.join(c['issues']) if c['issues'] else ''}")
         print(f"  beads={P.spec([b['members'] for b in c['beads']])}")
         for b in c['beads']:
@@ -589,7 +625,8 @@ def cmd_research(a):
         if rid in ex and why not in roles.setdefault(rid, []):
             roles[rid].append(why)
     _, ranked = ranked_candidates(md, mol, a.top)
-    cands, _ = supplied(ranked)
+    picked = supplied(ranked, mol, md)
+    cands = picked[0]
     for k, c in enumerate(cands):
         for b in c['beads']:
             atoms = P._ids(b['members'])
@@ -633,17 +670,17 @@ def cmd_research(a):
                 mem = ','.join(f'{i}' if w == 1 else f'{i}:{w:g}' for i, w in (bd['members'] or {}).items())
                 print(f"  {bd['name']:<8} {bd['type'] or '?':<6} {bd['signature'] or '(no signature)':<22} {mem}")
         print('  why: ' + '; '.join(why))
-    print('\n' + record_supplied(des, ranked))
+    print('\n' + record_supplied(des, picked))
     save(md, des, 'research', vars(a))
 
 
-def record_supplied(des, ranked):
-    """Record the supplied partitions as candidates P1.. (proposed_by 'pipeline') and choose P1, unless a choice
-    exists. The mapping step chooses among exactly these: `candidate` is refused once they are recorded. Returns
-    a line for the output."""
+def record_supplied(des, picked):
+    """Record the supplied partitions (`picked` = supplied(...)) as candidates P1.. (proposed_by 'pipeline') and
+    choose P1, unless a choice exists. The mapping step chooses among exactly these: `candidate` is refused once they
+    are recorded. Returns a line for the output."""
     if des['chosen_candidate']:
         return f"A candidate is already chosen ({des['chosen_candidate']}); nothing recorded."
-    ok, complete = supplied(ranked)
+    ok, complete = picked
     if not complete:
         return ('NO complete partition within the mapping rules was found: nothing recorded. The mapping agent '
                 'records its own partitions (design_candidate).')
@@ -654,19 +691,24 @@ def record_supplied(des, ranked):
                'beads': [{'name': f'B{j + 1}', 'members': {str(i): w for i, w in b['members'].items()},
                           'source': b['source']}
                          for j, b in enumerate(c['beads'])],
-               'summary': f"projected partition {P.spec([b['members'] for b in c['beads']])} (started from {c['seed']})",
+               'summary': f"projected partition {P.spec([b['members'] for b in c['beads']])} (started from {c['seed']}; "
+                          f"{family_text(c)})",
                'pros': [f"{exact} of {len(c['beads'])} beads hold exactly the fragment of an indexed bead", sasa_text(c)],
+               'family': c.get('family'), 'family_leader': c.get('family_leader'),
                'cons': ([f"{len(c['beads']) - exact} bead(s) without an exact precedent"] if exact < len(c['beads']) else []),
                'sources': srcs, 'sasa': c.get('sasa')}
         des['mapping_candidates'] = [x for x in des['mapping_candidates'] if x['id'] != rec['id']] + [rec]
     top = ok[0]
     des['chosen_candidate'] = des['pipeline_choice'] = 'P1'
+    n_fam = sum(c['family_leader'] for c in ok)
     des['selection_rationale'] = (f"chosen by the pipeline: the best-ranked projected partition (complete, within the mapping "
                                   f"rules, {sum(b['same_fragment'] for b in top['beads'])} of {len(top['beads'])} beads with "
-                                  f"an exact precedent, {sasa_text(top)}); the mapping agent confirms it or chooses another "
-                                  f"supplied partition")
-    return (f"Recorded candidates P1-P{len(ok)} and chose P1 ({sasa_text(top)}); the mapping step confirms it or "
-            f"chooses another of these.")
+                                  f"an exact precedent, {sasa_text(top)}); the supplied partitions lead {n_fam} distinct "
+                                  f"famil{'y' if n_fam == 1 else 'ies'}"
+                                  + (", the rest are variants" if n_fam < len(ok) else '')
+                                  + "; the mapping agent confirms it or chooses another supplied partition")
+    return (f"Recorded candidates P1-P{len(ok)} ({n_fam} distinct famil{'y' if n_fam == 1 else 'ies'}) and chose P1 "
+            f"({sasa_text(top)}); the mapping step confirms it or chooses another of these.")
 
 
 def cmd_shortlist(a):
@@ -674,8 +716,9 @@ def cmd_shortlist(a):
     cannot record candidates). Logged as one command, so a replay re-runs it."""
     md = Path(a.moldir)
     des = load(md)
-    _, ranked = ranked_candidates(md, target(md), a.top)
-    print(record_supplied(des, ranked))
+    mol = target(md)
+    _, ranked = ranked_candidates(md, mol, a.top)
+    print(record_supplied(des, supplied(ranked, mol, md)))
     save(md, des, 'shortlist', vars(a))
 
 
